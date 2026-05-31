@@ -951,7 +951,7 @@ ${convMsgs.substring(0, 2000)}
 Bitte schreibe eine passende, hilfreiche Antwort auf die letzte Nachricht des Kunden.`;
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch('https://tkns-claude-proxy.ronald-schneidert.workers.dev', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
