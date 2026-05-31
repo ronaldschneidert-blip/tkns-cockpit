@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TKNS Cockpit</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #1a1a2e;
+  --sidebar: #16213e;
+  --surface: #1f2b47;
+  --surface2: #263354;
+  --border: rgba(255,255,255,0.07);
+  --accent: #e040fb;
+  --accent2: #ff6b35;
+  --accent3: #ffc107;
+  --blue: #4fc3f7;
+  --green: #69f0ae;
+  --text: #f0f4ff;
+  --text-muted: #8892a4;
+  --text-dim: #b0bec5;
+  --radius: 16px;
+
+  /* Company colors */
+  --tkns: #4fc3f7;
+  --tkns-dim: rgba(79,195,247,0.12);
+  --ice: #69f0ae;
+  --ice-dim: rgba(105,240,174,0.12);
+  --starke: #ff6b35;
+  --starke-dim: rgba(255,107,53,0.12);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: var(--bg); color: var(--text);
+  min-height: 100vh; display: flex; overflow: hidden;
+}
+
+/* SETUP */
+#setup-panel {
+  position: fixed; inset: 0;
+  background: rgba(16,18,40,0.97);
+  z-index: 300; display: flex; align-items: center; justify-content: center;
+}
+.setup-card {
+  background: var(--surface);
+  border: 1px solid rgba(224,64,251,0.25);
+  border-radius: 24px; padding: 48px; width: 460px;
+  box-shadow: 0 0 80px rgba(224,64,251,0.12);
+}
+.setup-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }
+.setup-logo .mark {
+  width: 40px; height: 40px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 14px; color: #fff;
+}
+.setup-card h2 { font-size: 26px; font-weight: 800; margin-bottom: 8px; }
+.setup-card p { font-size: 13px; color: var(--text-muted); margin-bottom: 32px; line-height: 1.6; }
+.form-group { margin-bottom: 20px; }
+.form-group label {
+  display: block; font-size: 11px; font-weight: 600;
+  color: var(--text-muted); text-transform: uppercase;
+  letter-spacing: 1.5px; margin-bottom: 8px;
+  font-family: 'DM Mono', monospace;
+}
+.form-group input {
+  width: 100%; padding: 13px 16px;
+  background: var(--bg); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px; color: var(--text);
+  font-family: 'DM Mono', monospace; font-size: 13px;
+  outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+}
+.form-group input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(224,64,251,0.15); }
+.btn-primary {
+  width: 100%; padding: 14px;
+  background: linear-gradient(135deg, var(--accent), #7b2ff7);
+  color: #fff; font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px; font-weight: 700; border: none;
+  border-radius: 12px; cursor: pointer; transition: opacity 0.2s;
+}
+.btn-primary:hover { opacity: 0.9; }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+.demo-link {
+  display: block; text-align: center; margin-top: 14px;
+  font-size: 12px; color: var(--text-muted); cursor: pointer;
+  text-decoration: underline; background: none; border: none;
+  font-family: 'Plus Jakarta Sans', sans-serif; width: 100%;
+}
+.demo-link:hover { color: var(--accent); }
+
+/* SIDEBAR */
+.sidebar {
+  width: 240px; min-height: 100vh;
+  background: var(--sidebar); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; padding: 24px 16px;
+  flex-shrink: 0; position: relative; z-index: 10;
+}
+.sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 0 8px; margin-bottom: 32px; }
+.logo-box {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 12px; color: #fff; letter-spacing: 1px;
+}
+.logo-text { font-size: 18px; font-weight: 800; }
+.logo-sub { font-size: 10px; color: var(--text-muted); font-family: 'DM Mono', monospace; }
+.nav-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1.5px; color: var(--text-muted);
+  padding: 0 12px; margin-bottom: 8px; margin-top: 16px;
+  font-family: 'DM Mono', monospace;
+}
+
+/* Company filter pills */
+.company-filters { padding: 0 4px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 4px; }
+.cf-pill {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; border-radius: 10px; cursor: pointer;
+  transition: all 0.2s; font-size: 13px; font-weight: 500;
+  color: var(--text-muted); border: 1px solid transparent;
+}
+.cf-pill:hover { background: var(--surface); color: var(--text); }
+.cf-pill.active-filter { background: var(--surface); color: var(--text); border-color: var(--border); }
+.cf-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.cf-count {
+  margin-left: auto; font-family: 'DM Mono', monospace;
+  font-size: 10px; color: var(--text-muted);
+}
+
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 14px; border-radius: 12px; cursor: pointer;
+  transition: all 0.2s; margin-bottom: 2px;
+  font-size: 14px; font-weight: 500; color: var(--text-muted);
+  border: 1px solid transparent;
+}
+.nav-item:hover { background: var(--surface); color: var(--text); }
+.nav-item.active {
+  background: linear-gradient(135deg, rgba(224,64,251,0.2), rgba(123,47,247,0.2));
+  color: var(--accent); border-color: rgba(224,64,251,0.3);
+}
+.nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+.sidebar-bottom { margin-top: auto; }
+.status-pill {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px; background: var(--surface); border-radius: 12px;
+  font-size: 11px; color: var(--text-muted); font-family: 'DM Mono', monospace;
+}
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted); }
+.dot.on { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.dot.pulse { animation: blink 1.5s infinite; }
+@keyframes blink { 0%,100%{opacity:1}50%{opacity:0.3} }
+
+/* MAIN */
+.main-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.topbar {
+  height: 64px; display: flex; align-items: center;
+  padding: 0 28px; border-bottom: 1px solid var(--border);
+  gap: 16px; flex-shrink: 0;
+}
+.topbar-title { font-size: 22px; font-weight: 800; }
+.topbar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.demo-badge {
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  background: rgba(255,193,7,0.15); color: var(--accent3);
+  border: 1px solid rgba(255,193,7,0.3);
+  padding: 4px 10px; border-radius: 20px; letter-spacing: 1px; display: none;
+}
+.ticket-count-badge {
+  font-family: 'DM Mono', monospace; font-size: 12px;
+  background: rgba(224,64,251,0.15); color: var(--accent);
+  border: 1px solid rgba(224,64,251,0.3);
+  padding: 4px 12px; border-radius: 20px;
+}
+.refresh-btn {
+  padding: 8px 16px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 10px;
+  color: var(--text-dim); font-size: 13px; font-weight: 600;
+  cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif; transition: all 0.2s;
+}
+.refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+.content { flex: 1; display: grid; grid-template-columns: 360px 1fr; overflow: hidden; }
+
+/* TICKET LIST */
+.ticket-panel { border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+.ticket-list { flex: 1; overflow-y: auto; padding: 12px; }
+.ticket-list::-webkit-scrollbar { width: 4px; }
+.ticket-list::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 2px; }
+
+.ticket-card {
+  padding: 14px 16px; border-radius: var(--radius);
+  cursor: pointer; transition: all 0.2s; margin-bottom: 8px;
+  border: 1px solid var(--border); background: var(--surface);
+  position: relative; overflow: hidden;
+}
+.ticket-card::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px; border-radius: 3px 0 0 3px;
+}
+.ticket-card.p1::before { background: var(--green); }
+.ticket-card.p2::before { background: var(--accent3); }
+.ticket-card.p3::before { background: var(--accent2); }
+.ticket-card.p4::before { background: #f44336; }
+.ticket-card:hover { background: var(--surface2); }
+.ticket-card.active {
+  background: var(--surface2); border-color: var(--accent);
+  box-shadow: 0 0 0 1px rgba(224,64,251,0.2), 0 4px 20px rgba(224,64,251,0.1);
+}
+.tc-top { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+.tc-id { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-muted); }
+
+.company-badge {
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  padding: 2px 7px; border-radius: 6px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.cb-tkns { background: var(--tkns-dim); color: var(--tkns); border: 1px solid rgba(79,195,247,0.3); }
+.cb-ice { background: var(--ice-dim); color: var(--ice); border: 1px solid rgba(105,240,174,0.3); }
+.cb-starke { background: var(--starke-dim); color: var(--starke); border: 1px solid rgba(255,107,53,0.3); }
+.cb-unknown { background: rgba(255,255,255,0.05); color: var(--text-muted); border: 1px solid var(--border); }
+
+.prio-tag {
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  padding: 2px 7px; border-radius: 6px; font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.prio-1 { background: rgba(105,240,174,0.12); color: var(--green); }
+.prio-2 { background: rgba(255,193,7,0.12); color: var(--accent3); }
+.prio-3 { background: rgba(255,107,53,0.15); color: var(--accent2); }
+.prio-4 { background: rgba(244,67,54,0.15); color: #f44336; }
+
+.tc-subject {
+  font-size: 14px; font-weight: 700; color: var(--text);
+  margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tc-meta { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); }
+.tc-dot { width: 3px; height: 3px; background: var(--text-muted); border-radius: 50%; }
+
+/* DETAIL */
+.detail-area { display: flex; flex-direction: column; overflow: hidden; }
+.detail-empty {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  color: var(--text-muted); gap: 14px;
+}
+.detail-empty .big-icon { font-size: 56px; opacity: 0.2; }
+.detail-empty p { font-size: 13px; font-family: 'DM Mono', monospace; }
+.detail-view { display: none; flex-direction: column; height: 100%; overflow: hidden; }
+.detail-view.show { display: flex; }
+
+.detail-top {
+  padding: 20px 28px 18px; border-bottom: 1px solid var(--border);
+  background: var(--surface); flex-shrink: 0;
+}
+.detail-top-row { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+.d-left { flex: 1; }
+.d-company-bar {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+}
+.d-id { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--accent); }
+.d-subject { font-size: 19px; font-weight: 800; line-height: 1.3; }
+.d-stats { display: flex; gap: 20px; flex-wrap: wrap; }
+.d-stat { display: flex; flex-direction: column; gap: 3px; }
+.d-stat-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+.d-stat-val { font-size: 13px; font-weight: 600; color: var(--text-dim); }
+
+/* TABS */
+.detail-tabs {
+  display: flex; border-bottom: 1px solid var(--border);
+  background: var(--surface); flex-shrink: 0;
+}
+.tab {
+  padding: 12px 22px; font-size: 13px; font-weight: 600;
+  color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.tab-content { display: none; flex: 1; overflow-y: auto; }
+.tab-content.active { display: flex; flex-direction: column; }
+.tab-content::-webkit-scrollbar { width: 4px; }
+.tab-content::-webkit-scrollbar-thumb { background: var(--surface2); }
+
+/* CONVERSATION TAB */
+.conv-body { padding: 20px 28px; display: flex; flex-direction: column; gap: 0; flex: 1; }
+.msg {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 14px 16px; margin-bottom: 10px;
+}
+.msg.note { background: rgba(255,193,7,0.05); border-color: rgba(255,193,7,0.2); }
+.msg-head { display: flex; justify-content: space-between; margin-bottom: 8px; }
+.msg-from { font-size: 12px; font-weight: 700; color: var(--blue); }
+.msg.note .msg-from { color: var(--accent3); }
+.msg-date { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-muted); }
+.msg-body { font-size: 13px; color: var(--text-dim); line-height: 1.65; }
+
+/* ACTIONS TAB */
+.actions-body { padding: 20px 28px; flex: 1; }
+.actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.action-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px;
+}
+.action-card.wide { grid-column: 1 / -1; }
+.action-title {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1.5px; color: var(--text-muted);
+  font-family: 'DM Mono', monospace; margin-bottom: 12px;
+}
+.action-card select, .action-card input, .action-card textarea {
+  width: 100%; padding: 11px 14px;
+  background: var(--bg); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px; color: var(--text);
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px;
+  outline: none; transition: border-color 0.2s; margin-bottom: 10px;
+}
+.action-card select:focus, .action-card input:focus, .action-card textarea:focus { border-color: var(--accent); }
+.action-card select option { background: var(--surface); }
+.action-card textarea { resize: vertical; min-height: 80px; font-family: 'DM Mono', monospace; font-size: 12px; line-height: 1.6; }
+.cal-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.cal-row label { display: block; font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+
+.btn {
+  padding: 11px 18px; border: none; border-radius: 10px;
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 700;
+  cursor: pointer; transition: all 0.2s;
+}
+.btn-full { width: 100%; }
+.btn-purple { background: linear-gradient(135deg, var(--accent), #7b2ff7); color: #fff; }
+.btn-purple:hover { opacity: 0.88; }
+.btn-green { background: linear-gradient(135deg, #00c853, #69f0ae); color: #000; }
+.btn-green:hover { opacity: 0.88; }
+.btn-orange { background: linear-gradient(135deg, var(--accent2), var(--accent3)); color: #000; }
+.btn-orange:hover { opacity: 0.88; }
+.btn-blue { background: linear-gradient(135deg, #0288d1, #4fc3f7); color: #000; }
+.btn-blue:hover { opacity: 0.88; }
+.btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* AI TAB */
+.ai-body { padding: 20px 28px; flex: 1; display: flex; flex-direction: column; gap: 16px; }
+.ai-header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.ai-company-info {
+  flex: 1; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 14px 16px;
+  font-size: 12px; color: var(--text-muted); line-height: 1.6;
+  font-family: 'DM Mono', monospace;
+}
+.ai-company-info strong { color: var(--text-dim); font-size: 11px; display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; }
+.ai-response-area {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px;
+  flex: 1; display: flex; flex-direction: column; gap: 12px;
+}
+.ai-response-area textarea {
+  width: 100%; flex: 1; min-height: 200px;
+  background: var(--bg); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px; color: var(--text);
+  font-family: 'DM Mono', monospace; font-size: 13px; line-height: 1.7;
+  padding: 14px 16px; outline: none; resize: vertical;
+  transition: border-color 0.2s;
+}
+.ai-response-area textarea:focus { border-color: var(--accent); }
+.ai-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.ai-generating {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--accent); font-family: 'DM Mono', monospace;
+}
+.ai-placeholder {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 10px;
+  color: var(--text-muted); padding: 40px;
+  font-family: 'DM Mono', monospace; font-size: 13px; text-align: center;
+}
+.ai-placeholder .ai-icon { font-size: 40px; opacity: 0.3; }
+
+/* LOADING */
+.loading-row {
+  display: flex; align-items: center; gap: 10px; padding: 20px 12px;
+  color: var(--text-muted); font-size: 13px; font-family: 'DM Mono', monospace;
+}
+.spinner {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,0.1); border-top-color: var(--accent);
+  border-radius: 50%; animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* TOAST */
+#toast {
+  position: fixed; bottom: 24px; right: 24px;
+  padding: 14px 20px; border-radius: 12px; font-size: 13px; font-weight: 600;
+  z-index: 999; display: none; max-width: 320px; border: 1px solid;
+  animation: toastIn 0.3s ease; font-family: 'Plus Jakarta Sans', sans-serif;
+}
+#toast.success { background: rgba(105,240,174,0.1); border-color: var(--green); color: var(--green); }
+#toast.error { background: rgba(244,67,54,0.1); border-color: #f44336; color: #f44336; }
+#toast.info { background: rgba(224,64,251,0.1); border-color: var(--accent); color: var(--accent); }
+@keyframes toastIn { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+</style>
+</head>
+<body>
+
+<!-- SETUP -->
+<div id="setup-panel">
+  <div class="setup-card">
+    <div class="setup-logo">
+      <div class="mark">TK</div>
+      <div>
+        <div style="font-size:18px;font-weight:800;">TKNS Cockpit</div>
+        <div style="font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace;">Multi-Company Support</div>
+      </div>
+    </div>
+    <h2>Willkommen zurück</h2>
+    <p>Gib deinen Freshdesk API Key ein um alle offenen Tickets zu laden, oder starte im Demo-Modus.</p>
+    <div class="form-group">
+      <label>Freshdesk API Key</label>
+      <input type="password" id="setup-api-key" placeholder="Deinen API Key eingeben...">
+    </div>
+    <button class="btn-primary" onclick="connectFreshdesk()" id="connect-btn">Verbinden & Tickets laden</button>
+    <button class="demo-link" onclick="loadDemo()">Demo-Modus ohne API starten</button>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-box">TK</div>
+    <div>
+      <div class="logo-text">Cockpit</div>
+      <div class="logo-sub">Multi-Company</div>
+    </div>
+  </div>
+
+  <div class="nav-label">Alle Tickets</div>
+  <div class="nav-item active" onclick="filterCompany('all')"><span class="icon">🎫</span> Alle anzeigen</div>
+
+  <div class="nav-label">Nach Firma filtern</div>
+  <div class="company-filters">
+    <div class="cf-pill" onclick="filterCompany('tkns')" id="cf-tkns">
+      <span class="cf-dot" style="background:var(--tkns)"></span>
+      TKNS Telefonie
+      <span class="cf-count" id="count-tkns">0</span>
+    </div>
+    <div class="cf-pill" onclick="filterCompany('ice')" id="cf-ice">
+      <span class="cf-dot" style="background:var(--ice)"></span>
+      Mr. Ice
+      <span class="cf-count" id="count-ice">0</span>
+    </div>
+    <div class="cf-pill" onclick="filterCompany('starke')" id="cf-starke">
+      <span class="cf-dot" style="background:var(--starke)"></span>
+      Starke Power
+      <span class="cf-count" id="count-starke">0</span>
+    </div>
+  </div>
+
+  <div class="nav-label">Navigation</div>
+  <div class="nav-item"><span class="icon">📅</span> Kalender</div>
+  <div class="nav-item"><span class="icon">⚙️</span> Einstellungen</div>
+
+  <div class="sidebar-bottom">
+    <div class="status-pill">
+      <div class="dot pulse" id="status-dot"></div>
+      <span id="status-text" style="font-size:11px;">Nicht verbunden</span>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main-area">
+  <div class="topbar">
+    <div class="topbar-title">Ticket-Cockpit</div>
+    <div class="topbar-right">
+      <span class="demo-badge" id="demo-badge">● DEMO</span>
+      <span class="ticket-count-badge" id="ticket-count">0 Tickets</span>
+      <button class="refresh-btn" onclick="refreshTickets()">↻ Aktualisieren</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- LIST -->
+    <div class="ticket-panel">
+      <div class="ticket-list" id="ticket-list">
+        <div class="loading-row"><div class="spinner"></div>Warte auf Verbindung...</div>
+      </div>
+    </div>
+
+    <!-- DETAIL -->
+    <div class="detail-area">
+      <div class="detail-empty" id="detail-empty">
+        <div class="big-icon">🎫</div>
+        <p>Ticket auswählen</p>
+      </div>
+
+      <div class="detail-view" id="detail-view">
+        <div class="detail-top">
+          <div class="detail-top-row">
+            <div class="d-left">
+              <div class="d-company-bar">
+                <span class="d-id" id="d-id"></span>
+                <span class="company-badge" id="d-company-badge"></span>
+                <span class="prio-tag" id="d-prio"></span>
+              </div>
+              <div class="d-subject" id="d-subject"></div>
+            </div>
+          </div>
+          <div class="d-stats">
+            <div class="d-stat"><span class="d-stat-label">Kontakt</span><span class="d-stat-val" id="d-contact">—</span></div>
+            <div class="d-stat"><span class="d-stat-label">Email</span><span class="d-stat-val" id="d-email" style="font-family:'DM Mono',monospace;font-size:11px;">—</span></div>
+            <div class="d-stat"><span class="d-stat-label">Erstellt</span><span class="d-stat-val" id="d-created">—</span></div>
+            <div class="d-stat"><span class="d-stat-label">Agent</span><span class="d-stat-val" id="d-agent">—</span></div>
+          </div>
+        </div>
+
+        <!-- TABS -->
+        <div class="detail-tabs">
+          <div class="tab active" onclick="switchTab('conv')">💬 Konversation</div>
+          <div class="tab" onclick="switchTab('ai')">🤖 KI-Antwort</div>
+          <div class="tab" onclick="switchTab('actions')">⚡ Aktionen</div>
+        </div>
+
+        <!-- CONV TAB -->
+        <div class="tab-content active" id="tab-conv">
+          <div class="conv-body" id="conv-list"></div>
+        </div>
+
+        <!-- AI TAB -->
+        <div class="tab-content" id="tab-ai">
+          <div class="ai-body">
+            <div class="ai-header">
+              <div class="ai-company-info" id="ai-company-info">
+                <strong>Firma erkannt</strong>
+                Ticket auswählen um KI-Kontext zu laden.
+              </div>
+              <button class="btn btn-purple" onclick="generateAIResponse()" id="ai-gen-btn">✨ Antwort generieren</button>
+            </div>
+            <div class="ai-response-area">
+              <div class="ai-placeholder" id="ai-placeholder">
+                <div class="ai-icon">🤖</div>
+                <p>Klicke auf "Antwort generieren" um eine KI-Antwort zu erstellen</p>
+              </div>
+              <textarea id="ai-response-text" style="display:none" placeholder="KI-Antwort erscheint hier..."></textarea>
+              <div class="ai-actions" id="ai-actions" style="display:none">
+                <button class="btn btn-green" onclick="sendAIResponse()">📤 Antwort senden</button>
+                <button class="btn btn-purple" onclick="generateAIResponse()">↻ Neu generieren</button>
+                <button class="btn" style="background:var(--surface);color:var(--text-muted);border:1px solid var(--border)" onclick="copyResponse()">📋 Kopieren</button>
+                <span class="ai-generating" id="ai-generating" style="display:none"><div class="spinner"></div>KI denkt nach...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACTIONS TAB -->
+        <div class="tab-content" id="tab-actions">
+          <div class="actions-body">
+            <div class="actions-grid">
+              <div class="action-card">
+                <div class="action-title">👤 Agent zuweisen</div>
+                <select id="agent-select"><option value="">Agent wählen...</option></select>
+                <button class="btn btn-purple btn-full" onclick="assignAgent()">Zuweisen</button>
+              </div>
+              <div class="action-card">
+                <div class="action-title">📝 Interne Notiz</div>
+                <textarea id="note-text" placeholder="Notiz für den Agenten..."></textarea>
+                <button class="btn btn-orange btn-full" onclick="addNote()">Notiz speichern</button>
+              </div>
+              <div class="action-card wide">
+                <div class="action-title">📅 Google Calendar Termin</div>
+                <div class="cal-row">
+                  <div><label>Titel</label><input type="text" id="cal-title"></div>
+                  <div><label>Datum & Uhrzeit</label><input type="datetime-local" id="cal-datetime"></div>
+                  <div><label>Dauer (Min)</label><input type="number" id="cal-duration" value="30" min="15" step="15"></div>
+                </div>
+                <button class="btn btn-green" onclick="createCalendarEvent()">📅 In Google Calendar öffnen</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const DOMAIN = 'tkns.freshdesk.com';
+let apiKey = '', agents = [], currentTicket = null, isDemoMode = false;
+let allTickets = [], activeFilter = 'all';
+
+// ─── COMPANY DETECTION ───────────────────────────────────────
+const COMPANIES = {
+  tkns: {
+    name: 'TKNS Telefonie',
+    emails: ['anfrage@tkns.de', 'technik@tkns.de'],
+    badgeClass: 'cb-tkns',
+    color: 'var(--tkns)',
+    systemPrompt: `Du bist ein professioneller Support-Mitarbeiter für TKNS – Telekommunikations-Netzwerk-Service, betrieben von ETP Service UG in Berlin.
+
+ÜBER TKNS:
+TKNS bietet deutschlandweit Beratung, Verkauf und Service für Telefonanlagen – spezialisiert auf Mitel, Unify (OpenScape Business), Siemens (HiPath, HiCom) und Deutsche Telekom (Octopus). Neu, gebraucht und modernisiert, alles aus einer Hand.
+Website: www.tkns.de | Tel: +49 30 5050 8080 | Service Mo-Fr 10:00-19:00 Uhr
+
+PRODUKTE & LEISTUNGEN:
+- Telefonanlagen: Mitel/Unify OpenScape Business S/M/X, Siemens HiPath 3000/4000, HiCom 100/150/300, Telekom Octopus FX
+- Baugruppen, Netzteile, Lizenzen für alle Systeme
+- Telefone: OpenScape, Mitel 6900-Serie (SIP), 5300-Serie, Jabra Headsets
+- Cloud-Telefonie: Centraflex, STARFACE
+- Services: Installation & Programmierung, Techniker-Service, VoIP-Umrüstung, Migration HiPath V9, Display-Reparatur Optipoint 500, Ankauf gebrauchter Anlagen
+- WICHTIG: OpenScape Business V2 Support-Ende 2026 – Kunden aktiv darauf hinweisen
+- 3 Jahre Garantie, Express-Lieferung möglich, neuwertige gebrauchte Produkte verfügbar
+
+TON: Professionell, technisch kompetent, präzise, höflich. Immer auf Deutsch. Bei Preisanfragen Angebot anbieten. Bei techn. Problemen: Systemtyp, Softwareversion und Fehlerbeschreibung erfragen.
+
+SIGNATUR (immer verwenden):
+Mit freundlichen Grüßen
+ETP-Service-Team
+Phone: +49.30.5050 8080
+Web: www.tkns.de
+Mail: Benutzen Sie bitte die Antwortfunktion`
+  },
+  ice: {
+    name: 'Mr. Ice',
+    emails: ['anfrage@mrice.de'],
+    badgeClass: 'cb-ice',
+    color: 'var(--ice)',
+    systemPrompt: `Du bist ein freundlicher Mitarbeiter für Mr. ICE – Berlins Eislieferservice.
+
+ÜBER MR. ICE:
+Mr. ICE liefert Eis in großen Mengen für Events, Gastronomie, Spätis, Tankstellen und Privatkunden in Berlin. Selbstabholung möglich in Prenzlauer Berg und Charlottenburg. Keine Mengenbegrenzung – 30 kg bis 20 Tonnen.
+Website: mrice.de | Tel: 030 / 530 00 540 | WhatsApp: verfügbar
+
+PRODUKTE: Eiswürfel, Crushed Ice, Kühleis, Trockeneis
+
+LEISTUNGEN:
+- Lieferservice Berlin & Umland, Abholstationen, Intervall-Lieferung
+- Sonderpreise für Großmengen, Mobile Lagertruhen, TK-Anhänger Vermietung
+- Lieferfenster frei wählbar, Eventeis (Festivals, Hochzeiten, Messen)
+- Speziell für Spätis & Tankstellen, Vertriebspartner-Programm
+
+TON: Freundlich, energetisch, direkt und unkompliziert. Bei Großmengen Sonderpreise erwähnen. Bei Events nach Datum, Menge und Lieferort fragen.
+
+SIGNATUR:
+Viele Grüße
+Das Mr. ICE Team
+Tel: 030 / 530 00 540 | mrice.de`
+  },
+  starke: {
+    name: 'Starke Power',
+    emails: ['info@starke-power.de'],
+    badgeClass: 'cb-starke',
+    color: 'var(--starke)',
+    systemPrompt: `Du bist ein Mitarbeiter für Starke Power – professionelle Entrümpelung und Wohnungsauflösung in Berlin. Motto: "Wie besprochen, so erledigt."
+
+ÜBER STARKE POWER:
+Erfahrene Entrümpelungsfirma in Berlin. Schnell, diskret, professionell, faire Festpreise.
+Website: starke-power.de | Tel: 030 5050 80850 | WhatsApp & E-Mail verfügbar
+
+LEISTUNGEN: Wohnungsauflösung, Entrümpelung, Kellerentrümpelung, Haushaltsauflösung, Geschäftsauflösung, Hausentrümpelung, Messie-Wohnung (diskret), Sperrmüllabholung, Halteverbotsschilder mieten
+
+BESONDERHEITEN:
+✔ Kostenlose Besichtigung vor Ort
+✔ Transparenter Festpreis ohne versteckte Kosten
+✔ Sperrmüll-Kostenrechner online auf der Website
+✔ Preiseinschätzung auch per WhatsApp möglich
+
+TON: Empathisch, professionell, lösungsorientiert. Viele Kunden sind in schwierigen Situationen (Todesfall, Erbschaft, Überforderung). Immer kostenlose Besichtigung anbieten. Bei Preisfragen auf Kostenrechner oder Besichtigung hinweisen.
+
+SIGNATUR:
+Mit freundlichen Grüßen
+Starke Power Team
+Tel: 030 5050 80850 | starke-power.de`
+  }
+};
+
+function detectCompany(ticket) {
+  const toEmail = (ticket.to_emails || []).join(' ').toLowerCase();
+  const desc = (ticket.description_text || ticket.subject || '').toLowerCase();
+  
+  for (const [key, co] of Object.entries(COMPANIES)) {
+    if (co.emails.some(e => toEmail.includes(e.toLowerCase()))) return key;
+  }
+  // Fallback by keywords
+  if (desc.includes('openscape') || desc.includes('hipath') || desc.includes('netzteil') || desc.includes('telefon')) return 'tkns';
+  if (desc.includes('eis') || desc.includes('ice') || desc.includes('lieferung')) return 'ice';
+  if (desc.includes('entrümpel') || desc.includes('wohnungsauflös') || desc.includes('räumung')) return 'starke';
+  return 'unknown';
+}
+
+// ─── DEMO DATA ───────────────────────────────────────────────
+const DEMO_TICKETS = [
+  { id: 71245, subject: 'Netzteil OpenScape Business S', priority: 2, status: 2, created_at: '2026-05-28T09:14:00Z', requester: { name: 'Gérard PRIM', email: 'primbou@pt.lu' }, responder_id: 1, to_emails: ['anfrage@tkns.de'], description_text: 'Guten Tag, ich benötige ein Netzteil für unser OpenScape Business S System. Bitte um ein Angebot mit Versandkosten nach Luxemburg.' },
+  { id: 71232, subject: 'Eislieferung für Event am 15. Juni', priority: 2, status: 2, created_at: '2026-05-29T11:30:00Z', requester: { name: 'Party Events GmbH', email: 'info@party-events.de' }, responder_id: null, to_emails: ['anfrage@mrice.de'], description_text: 'Hallo, wir planen ein Event für 300 Personen und benötigen ca. 200kg Würfeleis und 50kg Crushed Ice. Lieferung am 15. Juni. Was kostet das und wie läuft die Lieferung ab?' },
+  { id: 71198, subject: 'Wohnungsauflösung 4-Zimmer Berlin', priority: 3, status: 2, created_at: '2026-05-27T14:22:00Z', requester: { name: 'Familie Schulz', email: 'schulz@gmail.com' }, responder_id: 2, to_emails: ['info@starke-power.de'], description_text: 'Wir müssen die Wohnung unserer verstorbenen Mutter auflösen. 4-Zimmer in Berlin Mitte, ca. 85qm. Wann wäre eine Besichtigung möglich und was würde das ungefähr kosten?' },
+  { id: 71155, subject: 'HiPath 3800 Lizenz Erweiterung', priority: 1, status: 2, created_at: '2026-05-26T08:00:00Z', requester: { name: 'Müller & Partner GmbH', email: 'it@mueller-partner.de' }, responder_id: 1, to_emails: ['technik@tkns.de'], description_text: 'Wir möchten unsere HiPath 3800 um 10 weitere Nebenstellen erweitern. Bitte um Angebot für die entsprechenden Lizenzen und Konfiguration.' },
+  { id: 71102, subject: 'Kellerräumung anfragen', priority: 2, status: 2, created_at: '2026-05-25T16:45:00Z', requester: { name: 'Thomas Becker', email: 'tbecker@web.de' }, responder_id: null, to_emails: ['info@starke-power.de'], description_text: 'Guten Tag, ich möchte meinen Keller räumen lassen. Ca. 30qm, voller alter Möbel und Sperrmüll. Ich bin in Hamburg. Machen Sie das auch außerhalb Berlins?' },
+  { id: 71089, subject: 'Trockeneis für Versand gesucht', priority: 1, status: 2, created_at: '2026-05-24T10:00:00Z', requester: { name: 'Pharmashop Online', email: 'logistik@pharmashop.de' }, responder_id: 2, to_emails: ['anfrage@mrice.de'], description_text: 'Wir suchen einen zuverlässigen Lieferanten für Trockeneis für den Versand von Medikamenten. Wöchentlicher Bedarf ca. 50kg. Können Sie das anbieten?' },
+];
+
+const DEMO_AGENTS = [
+  { id: 1, contact: { name: 'Jens Starke' } },
+  { id: 2, contact: { name: 'Ronald Schneider' } },
+  { id: 3, contact: { name: 'Pierre Martin' } },
+];
+
+const DEMO_CONV = {
+  71245: [
+    { from_email: 'primbou@pt.lu', body_text: 'Guten Tag, ich benötige ein Netzteil für unser OpenScape Business S System. Bitte um ein Angebot mit Versandkosten nach Luxemburg.', created_at: '2026-05-28T09:14:00Z', private: false },
+    { from_email: 'anfrage@tkns.de', body_text: 'Guten Tag, vielen Dank für Ihre Anfrage. Das Netzteil haben wir auf Lager. Der Preis beträgt 349€ netto zzgl. 9,00€ Versandkosten. Bei Interesse können wir ein Angebot erstellen.', created_at: '2026-05-28T15:38:00Z', private: false },
+    { from_email: 'primbou@pt.lu', body_text: 'Danke für die schnelle Rückmeldung. Bitte schicken Sie mir das formelle Angebot über 349 netto + 9.-€ Versand.', created_at: '2026-05-29T09:14:00Z', private: false },
+  ],
+};
+
+// ─── UTILS ───────────────────────────────────────────────────
+function toast(msg, type='info') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = type; el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 3500);
+}
+function fmtDate(s) {
+  if (!s) return '—';
+  return new Date(s).toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+function prioLabel(p) { return ['','Niedrig','Mittel','Hoch','Dringend'][p]||'—'; }
+function statusLabel(s) { return {2:'Offen',3:'Ausstehend',4:'Gelöst',5:'Geschlossen'}[s]||'—'; }
+
+// ─── API ─────────────────────────────────────────────────────
+async function fdFetch(path) {
+  const r = await fetch(`https://${DOMAIN}${path}`, { headers: { 'Authorization': 'Basic ' + btoa(apiKey+':X') } });
+  if (!r.ok) throw new Error('HTTP '+r.status); return r.json();
+}
+async function fdPut(path, body) {
+  const r = await fetch(`https://${DOMAIN}${path}`, { method:'PUT', headers: { 'Authorization':'Basic '+btoa(apiKey+':X'), 'Content-Type':'application/json' }, body: JSON.stringify(body) });
+  if (!r.ok) throw new Error('HTTP '+r.status); return r.json();
+}
+async function fdPost(path, body) {
+  const r = await fetch(`https://${DOMAIN}${path}`, { method:'POST', headers: { 'Authorization':'Basic '+btoa(apiKey+':X'), 'Content-Type':'application/json' }, body: JSON.stringify(body) });
+  if (!r.ok) throw new Error('HTTP '+r.status); return r.json();
+}
+
+// ─── CONNECT ─────────────────────────────────────────────────
+async function connectFreshdesk() {
+  const key = document.getElementById('setup-api-key').value.trim();
+  if (!key) { toast('Bitte API Key eingeben','error'); return; }
+  apiKey = key;
+  const btn = document.getElementById('connect-btn');
+  btn.disabled = true; btn.textContent = 'Verbinde...';
+  try {
+    const data = await fdFetch('/api/v2/tickets?status=2&per_page=50');
+    agents = await fdFetch('/api/v2/agents');
+    document.getElementById('setup-panel').style.display = 'none';
+    setConnected(true); renderTickets(data); populateAgents();
+  } catch(e) {
+    toast('Verbindung fehlgeschlagen. API Key prüfen.','error');
+    btn.disabled = false; btn.textContent = 'Verbinden & Tickets laden'; apiKey = '';
+  }
+}
+
+function loadDemo() {
+  isDemoMode = true; agents = DEMO_AGENTS;
+  document.getElementById('setup-panel').style.display = 'none';
+  document.getElementById('demo-badge').style.display = 'inline';
+  setConnected(true, true); renderTickets(DEMO_TICKETS); populateAgents();
+}
+
+function setConnected(ok, demo=false) {
+  document.getElementById('status-dot').className = 'dot ' + (ok ? 'on' : 'pulse');
+  document.getElementById('status-text').textContent = demo ? 'Demo-Modus' : (ok ? 'tkns.freshdesk.com' : 'Fehler');
+}
+
+async function refreshTickets() {
+  if (isDemoMode) { renderTickets(DEMO_TICKETS); toast('Aktualisiert','info'); return; }
+  try { const d = await fdFetch('/api/v2/tickets?status=2&per_page=50'); renderTickets(d); toast('Tickets aktualisiert','success'); }
+  catch(e) { toast('Fehler','error'); }
+}
+
+// ─── FILTER ──────────────────────────────────────────────────
+function filterCompany(key) {
+  activeFilter = key;
+  document.querySelectorAll('.cf-pill').forEach(p => p.classList.remove('active-filter'));
+  document.querySelectorAll('.nav-item').forEach(p => p.classList.remove('active'));
+  if (key === 'all') {
+    document.querySelector('.nav-item').classList.add('active');
+  } else {
+    document.getElementById('cf-'+key)?.classList.add('active-filter');
+  }
+  renderTicketList();
+}
+
+// ─── RENDER ──────────────────────────────────────────────────
+function renderTickets(tickets) {
+  allTickets = tickets.map(t => ({ ...t, _company: detectCompany(t) }));
+  window._tickets = allTickets;
+
+  // Update counts
+  const counts = { tkns: 0, ice: 0, starke: 0 };
+  allTickets.forEach(t => { if (counts[t._company] !== undefined) counts[t._company]++; });
+  Object.entries(counts).forEach(([k,v]) => {
+    const el = document.getElementById('count-'+k);
+    if (el) el.textContent = v;
+  });
+
+  renderTicketList();
+}
+
+function renderTicketList() {
+  const filtered = activeFilter === 'all' ? allTickets : allTickets.filter(t => t._company === activeFilter);
+  document.getElementById('ticket-count').textContent = filtered.length + ' Tickets';
+  const list = document.getElementById('ticket-list');
+  if (!filtered.length) { list.innerHTML = '<div class="loading-row">Keine Tickets gefunden</div>'; return; }
+
+  list.innerHTML = filtered.map(t => {
+    const co = COMPANIES[t._company];
+    const agentName = (agents.find(a => a.id === t.responder_id)?.contact.name || 'Offen').split(' ')[0];
+    const badgeClass = co ? co.name.split(' ')[0] === 'TKNS' ? 'cb-tkns' : co.name.split(' ')[0] === 'Mr.' ? 'cb-ice' : 'cb-starke' : 'cb-unknown';
+    const companyBadgeClass = t._company === 'tkns' ? 'cb-tkns' : t._company === 'ice' ? 'cb-ice' : t._company === 'starke' ? 'cb-starke' : 'cb-unknown';
+    const companyName = co ? co.name : '?';
+    return `<div class="ticket-card p${t.priority}" id="tc-${t.id}" onclick="selectTicket(${t.id})">
+      <div class="tc-top">
+        <span class="tc-id">#${t.id}</span>
+        <span class="company-badge ${companyBadgeClass}">${companyName}</span>
+        <span class="prio-tag prio-${t.priority}">${prioLabel(t.priority)}</span>
+      </div>
+      <div class="tc-subject">${t.subject}</div>
+      <div class="tc-meta">
+        <span>${t.requester?.name||'—'}</span>
+        <span class="tc-dot"></span>
+        <span>👤 ${agentName}</span>
+        <span class="tc-dot"></span>
+        <span>${fmtDate(t.created_at).split(',')[0]}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function populateAgents() {
+  document.getElementById('agent-select').innerHTML =
+    '<option value="">Agent wählen...</option>' +
+    agents.map(a => `<option value="${a.id}">${a.contact.name}</option>`).join('');
+}
+
+// ─── SELECT TICKET ───────────────────────────────────────────
+async function selectTicket(id) {
+  document.querySelectorAll('.ticket-card').forEach(el => el.classList.remove('active'));
+  document.getElementById('tc-'+id)?.classList.add('active');
+  const t = allTickets.find(x => x.id === id);
+  if (!t) return;
+  currentTicket = t;
+
+  document.getElementById('detail-empty').style.display = 'none';
+  document.getElementById('detail-view').classList.add('show');
+
+  const co = COMPANIES[t._company];
+  const companyBadgeClass = t._company === 'tkns' ? 'cb-tkns' : t._company === 'ice' ? 'cb-ice' : t._company === 'starke' ? 'cb-starke' : 'cb-unknown';
+
+  document.getElementById('d-id').textContent = '#' + t.id;
+  document.getElementById('d-subject').textContent = t.subject;
+  document.getElementById('d-contact').textContent = t.requester?.name || '—';
+  document.getElementById('d-email').textContent = t.requester?.email || '—';
+  document.getElementById('d-created').textContent = fmtDate(t.created_at);
+  const ag = agents.find(a => a.id === t.responder_id);
+  document.getElementById('d-agent').textContent = ag ? ag.contact.name : 'Nicht zugewiesen';
+  const pb = document.getElementById('d-prio');
+  pb.textContent = prioLabel(t.priority); pb.className = 'prio-tag prio-'+t.priority;
+  const cb = document.getElementById('d-company-badge');
+  cb.textContent = co ? co.name : 'Unbekannt';
+  cb.className = 'company-badge ' + companyBadgeClass;
+
+  // AI info
+  if (co) {
+    document.getElementById('ai-company-info').innerHTML = `<strong>${co.name}</strong>${co.emails.join(' / ')} — KI-Profil aktiv für diese Firma.`;
+  }
+
+  // Reset AI panel
+  document.getElementById('ai-placeholder').style.display = 'flex';
+  document.getElementById('ai-response-text').style.display = 'none';
+  document.getElementById('ai-actions').style.display = 'none';
+  document.getElementById('ai-response-text').value = '';
+
+  document.getElementById('cal-title').value = `Ticket #${t.id}: ${t.subject}`;
+  const tom = new Date(); tom.setDate(tom.getDate()+1); tom.setHours(10,0,0,0);
+  document.getElementById('cal-datetime').value = tom.toISOString().slice(0,16);
+  if (t.responder_id) document.getElementById('agent-select').value = t.responder_id;
+
+  switchTab('conv');
+  await loadConv(id);
+}
+
+// ─── TABS ────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const names = ['conv','ai','actions'];
+    t.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.tab-content').forEach((c,i) => {
+    const names = ['tab-conv','tab-ai','tab-actions'];
+    c.classList.toggle('active', c.id === 'tab-'+name);
+  });
+}
+
+// ─── CONVERSATION ────────────────────────────────────────────
+async function loadConv(id) {
+  const c = document.getElementById('conv-list');
+  c.innerHTML = '<div class="loading-row"><div class="spinner"></div>Lade...</div>';
+  try {
+    let convs = isDemoMode ? (DEMO_CONV[id]||[]) : await fdFetch(`/api/v2/tickets/${id}/conversations`);
+    const t = currentTicket;
+    let msgs = [];
+    if (t.description_text) msgs.push({ from: t.requester?.name||'Kunde', body: t.description_text, date: t.created_at, note: false });
+    convs.forEach(m => msgs.push({ from: m.from_email||'Agent', body: m.body_text||m.body||'', date: m.created_at, note: m.private||false }));
+    if (!msgs.length) { c.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:12px">Keine Nachrichten</div>'; return; }
+    c.innerHTML = msgs.map(m => `
+      <div class="msg${m.note?' note':''}">
+        <div class="msg-head">
+          <span class="msg-from">${m.note?'📝 Notiz · ':''}${m.from}</span>
+          <span class="msg-date">${fmtDate(m.date)}</span>
+        </div>
+        <div class="msg-body">${(m.body||'').substring(0,600)}${(m.body||'').length>600?'...':''}</div>
+      </div>`).join('');
+  } catch(e) {
+    c.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:12px">Konversation nicht verfügbar.</div>';
+  }
+}
+
+// ─── AI RESPONSE ─────────────────────────────────────────────
+async function generateAIResponse() {
+  if (!currentTicket) return;
+  const co = COMPANIES[currentTicket._company];
+  if (!co) { toast('Firma konnte nicht erkannt werden','error'); return; }
+
+  switchTab('ai');
+  document.getElementById('ai-placeholder').style.display = 'none';
+  document.getElementById('ai-response-text').style.display = 'none';
+  document.getElementById('ai-actions').style.display = 'flex';
+  document.getElementById('ai-generating').style.display = 'flex';
+  document.getElementById('ai-gen-btn').disabled = true;
+
+  // Build conversation context
+  const convMsgs = document.getElementById('conv-list').innerText || currentTicket.description_text || '';
+  const userPrompt = `Ticket #${currentTicket.id}: ${currentTicket.subject}
+Kunde: ${currentTicket.requester?.name || '—'} (${currentTicket.requester?.email || '—'})
+Erstellt: ${fmtDate(currentTicket.created_at)}
+
+Konversationsverlauf:
+${convMsgs.substring(0, 2000)}
+
+Bitte schreibe eine passende, hilfreiche Antwort auf die letzte Nachricht des Kunden.`;
+
+  try {
+    const response = await fetch('https://tkns-claude-proxy.ronald-schneidert.workers.dev', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: co.systemPrompt,
+        messages: [{ role: 'user', content: userPrompt }]
+      })
+    });
+    const data = await response.json();
+    const text = data.content?.map(c => c.text||'').join('') || 'Fehler beim Generieren.';
+    document.getElementById('ai-response-text').value = text;
+    document.getElementById('ai-response-text').style.display = 'block';
+    toast('✨ KI-Antwort generiert','success');
+  } catch(e) {
+    document.getElementById('ai-response-text').value = 'Fehler: ' + e.message;
+    document.getElementById('ai-response-text').style.display = 'block';
+    toast('Fehler bei KI','error');
+  }
+
+  document.getElementById('ai-generating').style.display = 'none';
+  document.getElementById('ai-gen-btn').disabled = false;
+}
+
+async function sendAIResponse() {
+  if (!currentTicket) return;
+  const text = document.getElementById('ai-response-text').value.trim();
+  if (!text) { toast('Keine Antwort zum Senden','error'); return; }
+
+  if (isDemoMode) {
+    toast('✓ Antwort gesendet (Demo)','success');
+    document.getElementById('conv-list').innerHTML += `
+      <div class="msg">
+        <div class="msg-head"><span class="msg-from">Du (via KI)</span><span class="msg-date">Jetzt</span></div>
+        <div class="msg-body">${text.replace(/\n/g,'<br>')}</div>
+      </div>`;
+    switchTab('conv');
+    return;
+  }
+  try {
+    await fdPost(`/api/v2/tickets/${currentTicket.id}/reply`, { body: text });
+    toast('✓ Antwort erfolgreich gesendet','success');
+    switchTab('conv');
+    await loadConv(currentTicket.id);
+  } catch(e) { toast('Fehler beim Senden','error'); }
+}
+
+function copyResponse() {
+  const text = document.getElementById('ai-response-text').value;
+  navigator.clipboard.writeText(text).then(() => toast('✓ Kopiert','success'));
+}
+
+// ─── ACTIONS ─────────────────────────────────────────────────
+async function assignAgent() {
+  if (!currentTicket) return;
+  const id = document.getElementById('agent-select').value;
+  if (!id) { toast('Bitte Agent auswählen','error'); return; }
+  const name = agents.find(a=>a.id==id)?.contact.name||'?';
+  if (isDemoMode) { document.getElementById('d-agent').textContent = name; toast(`✓ ${name} zugewiesen (Demo)`,'success'); return; }
+  try {
+    await fdPut(`/api/v2/tickets/${currentTicket.id}`, { responder_id: parseInt(id) });
+    document.getElementById('d-agent').textContent = name;
+    toast(`✓ ${name} zugewiesen`,'success');
+  } catch(e) { toast('Fehler','error'); }
+}
+
+async function addNote() {
+  if (!currentTicket) return;
+  const text = document.getElementById('note-text').value.trim();
+  if (!text) { toast('Bitte Notiz eingeben','error'); return; }
+  if (isDemoMode) {
+    document.getElementById('note-text').value = '';
+    toast('✓ Notiz gespeichert (Demo)','success');
+    switchTab('conv');
+    document.getElementById('conv-list').innerHTML += `
+      <div class="msg note"><div class="msg-head"><span class="msg-from">📝 Notiz · Du</span><span class="msg-date">Jetzt</span></div><div class="msg-body">${text}</div></div>`;
+    return;
+  }
+  try {
+    await fdPost(`/api/v2/tickets/${currentTicket.id}/notes`, { body: text, private: true });
+    document.getElementById('note-text').value = '';
+    toast('✓ Notiz gespeichert','success');
+    switchTab('conv'); await loadConv(currentTicket.id);
+  } catch(e) { toast('Fehler','error'); }
+}
+
+function createCalendarEvent() {
+  if (!currentTicket) return;
+  const title = document.getElementById('cal-title').value || `Ticket #${currentTicket.id}`;
+  const dt = document.getElementById('cal-datetime').value;
+  const dur = parseInt(document.getElementById('cal-duration').value)||30;
+  if (!dt) { toast('Bitte Datum eingeben','error'); return; }
+  const start = new Date(dt), end = new Date(start.getTime()+dur*60000);
+  const fmt = d => d.toISOString().replace(/[-:]/g,'').split('.')[0]+'Z';
+  const details = `Freshdesk Ticket #${currentTicket.id}\nFirma: ${COMPANIES[currentTicket._company]?.name||'?'}\nKunde: ${currentTicket.requester?.name||'—'}\nhttps://${DOMAIN}/a/tickets/${currentTicket.id}`;
+  window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${fmt(start)}/${fmt(end)}&details=${encodeURIComponent(details)}`,'_blank');
+  toast('✓ Google Calendar geöffnet','success');
+}
+</script>
+</body>
+</html>
