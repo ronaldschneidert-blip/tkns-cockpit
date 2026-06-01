@@ -416,13 +416,9 @@ body {
       </div>
     </div>
     <h2>Willkommen zurück</h2>
-    <p>Gib deinen Freshdesk API Key ein um alle offenen Tickets zu laden, oder starte im Demo-Modus.</p>
-    <div class="form-group">
-      <label>Freshdesk API Key</label>
-      <input type="password" id="setup-api-key" placeholder="Deinen API Key eingeben...">
-    </div>
-    <button class="btn-primary" onclick="connectFreshdesk()" id="connect-btn">Verbinden & Tickets laden</button>
-    <button class="demo-link" onclick="loadDemo()">Demo-Modus ohne API starten</button>
+    <p>Klicke auf "Tickets laden" um alle offenen Freshdesk Tickets zu sehen, oder starte im Demo-Modus.</p>
+    <button class="btn-primary" onclick="connectFreshdesk()" id="connect-btn" style="margin-top:12px">🔄 Tickets laden</button>
+    <button class="demo-link" onclick="loadDemo()">Demo-Modus starten</button>
   </div>
 </div>
 
@@ -786,34 +782,33 @@ function prioLabel(p) { return ['','Niedrig','Mittel','Hoch','Dringend'][p]||'�
 function statusLabel(s) { return {2:'Offen',3:'Ausstehend',4:'Gelöst',5:'Geschlossen'}[s]||'—'; }
 
 // ─── API ─────────────────────────────────────────────────────
+const WORKER = 'https://tkns-claude-proxy.ronald-schneidert.workers.dev';
+
 async function fdFetch(path) {
-  const r = await fetch(`https://${DOMAIN}${path}`, { headers: { 'Authorization': 'Basic ' + btoa(apiKey+':X') } });
+  const r = await fetch(`${WORKER}/freshdesk${path}`, { headers: { 'Content-Type': 'application/json' } });
   if (!r.ok) throw new Error('HTTP '+r.status); return r.json();
 }
 async function fdPut(path, body) {
-  const r = await fetch(`https://${DOMAIN}${path}`, { method:'PUT', headers: { 'Authorization':'Basic '+btoa(apiKey+':X'), 'Content-Type':'application/json' }, body: JSON.stringify(body) });
+  const r = await fetch(`${WORKER}/freshdesk${path}`, { method:'PUT', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(body) });
   if (!r.ok) throw new Error('HTTP '+r.status); return r.json();
 }
 async function fdPost(path, body) {
-  const r = await fetch(`https://${DOMAIN}${path}`, { method:'POST', headers: { 'Authorization':'Basic '+btoa(apiKey+':X'), 'Content-Type':'application/json' }, body: JSON.stringify(body) });
+  const r = await fetch(`${WORKER}/freshdesk${path}`, { method:'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(body) });
   if (!r.ok) throw new Error('HTTP '+r.status); return r.json();
 }
 
 // ─── CONNECT ─────────────────────────────────────────────────
 async function connectFreshdesk() {
-  const key = document.getElementById('setup-api-key').value.trim();
-  if (!key) { toast('Bitte API Key eingeben','error'); return; }
-  apiKey = key;
   const btn = document.getElementById('connect-btn');
   btn.disabled = true; btn.textContent = 'Verbinde...';
   try {
-    const data = await fdFetch('/api/v2/tickets?status=2&per_page=50');
-    agents = await fdFetch('/api/v2/agents');
+    const data = await fdFetch('/tickets?status=2&per_page=50');
+    agents = await fdFetch('/agents');
     document.getElementById('setup-panel').style.display = 'none';
     setConnected(true); renderTickets(data); populateAgents();
   } catch(e) {
-    toast('Verbindung fehlgeschlagen. API Key prüfen.','error');
-    btn.disabled = false; btn.textContent = 'Verbinden & Tickets laden'; apiKey = '';
+    toast('Verbindung fehlgeschlagen.','error');
+    btn.disabled = false; btn.textContent = 'Verbinden & Tickets laden';
   }
 }
 
@@ -831,7 +826,7 @@ function setConnected(ok, demo=false) {
 
 async function refreshTickets() {
   if (isDemoMode) { renderTickets(DEMO_TICKETS); toast('Aktualisiert','info'); return; }
-  try { const d = await fdFetch('/api/v2/tickets?status=2&per_page=50'); renderTickets(d); toast('Tickets aktualisiert','success'); }
+  try { const d = await fdFetch('/tickets?status=2&per_page=50'); renderTickets(d); toast('Tickets aktualisiert','success'); }
   catch(e) { toast('Fehler','error'); }
 }
 
@@ -964,7 +959,7 @@ async function loadConv(id) {
   const c = document.getElementById('conv-list');
   c.innerHTML = '<div class="loading-row"><div class="spinner"></div>Lade...</div>';
   try {
-    let convs = isDemoMode ? (DEMO_CONV[id]||[]) : await fdFetch(`/api/v2/tickets/${id}/conversations`);
+    let convs = isDemoMode ? (DEMO_CONV[id]||[]) : await fdFetch(`/tickets/${id}/conversations`);
     const t = currentTicket;
     let msgs = [];
     if (t.description_text) msgs.push({ from: t.requester?.name||'Kunde', body: t.description_text, date: t.created_at, note: false });
