@@ -1174,11 +1174,11 @@ async function connectFreshdesk() {
   const btn = document.getElementById('connect-btn');
   btn.disabled = true; btn.textContent = 'Verbinde...';
   try {
-    const r1 = await fdFetch('/search/tickets?query=%22status%3A2%22&page=1');
-    const r2 = await fdFetch('/search/tickets?query=%22status%3A2%22&page=2');
-    const r3 = await fdFetch('/search/tickets?query=%22status%3A3%22&page=1');
-    const r4 = await fdFetch('/search/tickets?query=%22status%3A6%22&page=1');
-    const r5 = await fdFetch('/search/tickets?query=%22status%3A2%22&page=3');
+    const r1 = await fdFetch('/search/tickets?query=%22status%3A2%22&page=1&include=attachments');
+    const r2 = await fdFetch('/search/tickets?query=%22status%3A2%22&page=2&include=attachments');
+    const r3 = await fdFetch('/search/tickets?query=%22status%3A3%22&page=1&include=attachments');
+    const r4 = await fdFetch('/search/tickets?query=%22status%3A6%22&page=1&include=attachments');
+    const r5 = await fdFetch('/search/tickets?query=%22status%3A2%22&page=3&include=attachments');
     const seen = new Set();
     const data = [...(r1.results||[]), ...(r2.results||[]), ...(r3.results||[]), ...(r4.results||[]), ...(r5.results||[])].filter(t => {
       if (seen.has(t.id)) return false;
@@ -1278,8 +1278,20 @@ function populateAgents() {
 async function selectTicket(id) {
   document.querySelectorAll('.ticket-card').forEach(el => el.classList.remove('active'));
   document.getElementById('tc-'+id)?.classList.add('active');
-  const t = allTickets.find(x => x.id === id);
+  let t = allTickets.find(x => x.id === id);
   if (!t) return;
+  // Fetch full ticket with attachments if not already loaded
+  if (!t._attachmentsLoaded && !isDemoMode) {
+    try {
+      const full = await fdFetch(`/tickets/${id}?include=attachments,conversations`);
+      t.attachments = full.attachments || [];
+      t._convAttachments = (full.conversations || []).flatMap(c => c.attachments || []);
+      t._attachmentsLoaded = true;
+      // Update in allTickets
+      const idx = allTickets.findIndex(x => x.id === id);
+      if (idx !== -1) allTickets[idx] = { ...t };
+    } catch(e) { console.warn('Could not load full ticket:', e); }
+  }
   currentTicket = t;
 
   document.getElementById('detail-empty').style.display = 'none';
@@ -1414,8 +1426,14 @@ async function buildMessageContent(userPromptText, attachments) {
     const isPdf = ext === 'pdf' || (att.content_type || '').includes('pdf');
     const isImage = ['jpg','jpeg','png','gif','webp'].includes(ext)
                     || (att.content_type || '').startsWith('image/');
+    const isDocx = ['docx','doc'].includes(ext) || (att.content_type || '').includes('wordprocessing');
+    const isText = ['txt','csv'].includes(ext);
 
-    if (!isPdf && !isImage) continue; // otros tipos: ignorar
+    if (!isPdf && !isImage && !isDocx && !isText) {
+      // Skip unsupported types but note them
+      content.push({ type: 'text', text: `[Anhang nicht lesbar: ${att.name || 'datei'} (${ext})]` });
+      continue;
+    }
 
     const result = await fetchAttachment(att.attachment_url);
     if (!result) continue;
@@ -1427,7 +1445,7 @@ async function buildMessageContent(userPromptText, attachments) {
         type: 'document',
         source: { type: 'base64', media_type: 'application/pdf', data: base64 }
       });
-      content.push({ type: 'text', text: `[Anhang: ${att.name || 'dokument.pdf'}]` });
+      content.push({ type: 'text', text: `[PDF-Anhang: ${att.name || 'dokument.pdf'}]` });
     } else if (isImage) {
       const mime = contentType.startsWith('image/') ? contentType : `image/${ext}`;
       content.push({
@@ -1435,6 +1453,18 @@ async function buildMessageContent(userPromptText, attachments) {
         source: { type: 'base64', media_type: mime, data: base64 }
       });
       content.push({ type: 'text', text: `[Foto: ${att.name || 'bild'}]` });
+    } else if (isDocx || isText) {
+      // Worker extracts text from docx and returns { text } instead of { base64 }
+      if (result.text) {
+        content.push({ type: 'text', text: `[Word-Dokument: ${att.name}]
+
+Inhalt:
+${result.text}
+
+Bitte extrahiere alle Artikel/Gegenstände aus diesem Dokument und erstelle eine vollständige Kostenaufstellung anhand der Preisliste.` });
+      } else if (result.base64) {
+        content.push({ type: 'text', text: `[Dokument: ${att.name} – konnte nicht gelesen werden. Bitte den Kunden um eine Liste im Textformat bitten.]` });
+      }
     }
   }
 
