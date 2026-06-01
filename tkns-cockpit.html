@@ -820,9 +820,10 @@ async function connectFreshdesk() {
   const btn = document.getElementById('connect-btn');
   btn.disabled = true; btn.textContent = 'Verbinde...';
   try {
-    const page1 = await fdFetch('/tickets?per_page=50&order_by=created_at&order_type=desc&filter=new_and_my_open&include=requester&page=1');
-    const page2 = await fdFetch('/tickets?per_page=50&order_by=created_at&order_type=desc&filter=new_and_my_open&include=requester&page=2');
-    const data = [...page1, ...(Array.isArray(page2) ? page2 : [])];
+    const page1 = await fdFetch('/tickets?per_page=50&order_by=created_at&order_type=desc&include=requester&page=1');
+    const page2 = await fdFetch('/tickets?per_page=50&order_by=created_at&order_type=desc&include=requester&page=2');
+    const allTickets = [...page1, ...(Array.isArray(page2) ? page2 : [])];
+    const data = allTickets.filter(t => t.status === 2 || t.status === 3);
     agents = await fdFetch('/agents');
     document.getElementById('setup-panel').style.display = 'none';
     setConnected(true); renderTickets(data); populateAgents();
