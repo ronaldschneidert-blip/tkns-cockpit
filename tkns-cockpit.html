@@ -750,13 +750,20 @@ Tel: 030 5050 80850 | starke-power.de`
 
 function detectCompany(ticket) {
   const toEmail = (ticket.to_emails || []).join(' ').toLowerCase();
+  const supportEmail = (ticket.support_email || '').toLowerCase();
+  const allEmails = toEmail + ' ' + supportEmail;
   const desc = (ticket.description_text || ticket.subject || '').toLowerCase();
   
   for (const [key, co] of Object.entries(COMPANIES)) {
-    if (co.emails.some(e => toEmail.includes(e.toLowerCase()))) return key;
+    if (co.emails.some(e => allEmails.includes(e.toLowerCase()))) return key;
   }
+  // Fallback by support_email domain
+  if (supportEmail.includes('tkns') && supportEmail.includes('technik')) return 'tkns_tech';
+  if (supportEmail.includes('tkns')) return 'tkns';
+  if (supportEmail.includes('mrice') || supportEmail.includes('mricedean')) return 'ice';
+  if (supportEmail.includes('starke')) return 'starke';
   // Fallback by keywords
-  if (desc.includes('openscape') || desc.includes('hipath') || desc.includes('netzteil') || desc.includes('telefon')) return 'tkns';
+  if (desc.includes('openscape') || desc.includes('hipath') || desc.includes('netzteil')) return 'tkns';
   if (desc.includes('eis') || desc.includes('ice') || desc.includes('lieferung')) return 'ice';
   if (desc.includes('entrümpel') || desc.includes('wohnungsauflös') || desc.includes('räumung')) return 'starke';
   return 'unknown';
@@ -822,7 +829,8 @@ async function connectFreshdesk() {
   try {
     const page1 = await fdFetch('/tickets?per_page=50&order_by=created_at&order_type=desc&include=requester&page=1');
     const page2 = await fdFetch('/tickets?per_page=50&order_by=created_at&order_type=desc&include=requester&page=2');
-    const allTickets = [...page1, ...(Array.isArray(page2) ? page2 : [])];
+    const page3 = await fdFetch('/tickets?per_page=50&order_by=created_at&order_type=desc&include=requester&page=3');
+    const allTickets = [...page1, ...(Array.isArray(page2) ? page2 : []), ...(Array.isArray(page3) ? page3 : [])];
     const data = allTickets.filter(t => t.status === 2 || t.status === 3);
     agents = await fdFetch('/agents');
     document.getElementById('setup-panel').style.display = 'none';
