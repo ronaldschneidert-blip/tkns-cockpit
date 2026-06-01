@@ -1174,11 +1174,11 @@ async function connectFreshdesk() {
   const btn = document.getElementById('connect-btn');
   btn.disabled = true; btn.textContent = 'Verbinde...';
   try {
-    const r1 = await fdFetch('/search/tickets?query=%22status%3A2%22&page=1&include=attachments');
-    const r2 = await fdFetch('/search/tickets?query=%22status%3A2%22&page=2&include=attachments');
-    const r3 = await fdFetch('/search/tickets?query=%22status%3A3%22&page=1&include=attachments');
-    const r4 = await fdFetch('/search/tickets?query=%22status%3A6%22&page=1&include=attachments');
-    const r5 = await fdFetch('/search/tickets?query=%22status%3A2%22&page=3&include=attachments');
+    const r1 = await fdFetch('/search/tickets?query=%22status%3A2%22&page=1');
+    const r2 = await fdFetch('/search/tickets?query=%22status%3A2%22&page=2');
+    const r3 = await fdFetch('/search/tickets?query=%22status%3A3%22&page=1');
+    const r4 = await fdFetch('/search/tickets?query=%22status%3A6%22&page=1');
+    const r5 = await fdFetch('/search/tickets?query=%22status%3A2%22&page=3');
     const seen = new Set();
     const data = [...(r1.results||[]), ...(r2.results||[]), ...(r3.results||[]), ...(r4.results||[]), ...(r5.results||[])].filter(t => {
       if (seen.has(t.id)) return false;
