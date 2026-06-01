@@ -1338,11 +1338,11 @@ async function loadConv(id) {
     let convs = isDemoMode ? (DEMO_CONV[id]||[]) : await fdFetch(`/tickets/${id}/conversations`);
     const t = currentTicket;
     let msgs = [];
-    if (t.description_text) msgs.push({ from: t.requester?.name||'Kunde', body: t.description_text, date: t.created_at, note: false });
+    if (t.description_text) msgs.push({ from: t.requester?.name||'Kunde', body: t.description_text, date: t.created_at, note: false, attachments: t.attachments||[] });
     // Recopilar adjuntos de todas las conversaciones
     const convAttachments = [];
     convs.forEach(m => {
-      msgs.push({ from: m.from_email||'Agent', body: m.body_text||m.body||'', date: m.created_at, note: m.private||false });
+      msgs.push({ from: m.from_email||'Agent', body: m.body_text||m.body||'', date: m.created_at, note: m.private||false, attachments: m.attachments||[] });
       if (m.attachments && m.attachments.length) convAttachments.push(...m.attachments);
     });
     currentTicket._convAttachments = convAttachments;
@@ -1353,14 +1353,30 @@ async function loadConv(id) {
       msgs.push({ from: '📎 System', body: `${totalAtt} Anhang/Anhänge gefunden – werden beim Generieren automatisch analysiert.`, date: null, note: true });
     }
     if (!msgs.length) { c.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:12px">Keine Nachrichten</div>'; return; }
-    c.innerHTML = msgs.map(m => `
-      <div class="msg${m.note?' note':''}">
+    c.innerHTML = msgs.map(m => {
+      const attHtml = (m.attachments||[]).map(a => {
+        const isImg = /\.(jpg|jpeg|png|gif|webp)$/i.test(a.name||'');
+        if (isImg) {
+          return `<div style="margin-top:10px">
+            <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;font-family:'DM Mono',monospace">📎 ${a.name}</div>
+            <img src="${a.attachment_url}" style="max-width:100%;max-height:300px;border-radius:8px;border:1px solid var(--border)" onerror="this.style.display='none'">
+          </div>`;
+        }
+        return `<div style="margin-top:8px">
+          <a href="${a.attachment_url}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--blue);font-size:12px;text-decoration:none;font-family:'DM Mono',monospace">
+            📎 ${a.name||'Anhang'} <span style="color:var(--text-muted);font-size:10px">${a.size ? Math.round(a.size/1024)+'KB' : ''}</span>
+          </a>
+        </div>`;
+      }).join('');
+      return `<div class="msg${m.note?' note':''}">
         <div class="msg-head">
           <span class="msg-from">${m.note?'📝 Notiz · ':''}${m.from}</span>
           <span class="msg-date">${fmtDate(m.date)}</span>
         </div>
-        <div class="msg-body">${(m.body||'').substring(0,600)}${(m.body||'').length>600?'...':''}</div>
-      </div>`).join('');
+        <div class="msg-body" style="white-space:pre-wrap">${(m.body||'').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+        ${attHtml}
+      </div>`;
+    }).join('');
   } catch(e) {
     c.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:12px">Konversation nicht verfügbar.</div>';
   }
