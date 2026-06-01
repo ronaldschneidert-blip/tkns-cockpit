@@ -25,6 +25,8 @@
   /* Company colors */
   --tkns: #4fc3f7;
   --tkns-dim: rgba(79,195,247,0.12);
+  --tkns-tech: #a78bfa;
+  --tkns-tech-dim: rgba(167,139,250,0.12);
   --ice: #69f0ae;
   --ice-dim: rgba(105,240,174,0.12);
   --starke: #ff6b35;
@@ -219,6 +221,7 @@ body {
   text-transform: uppercase; letter-spacing: 0.5px;
 }
 .cb-tkns { background: var(--tkns-dim); color: var(--tkns); border: 1px solid rgba(79,195,247,0.3); }
+.cb-tkns-tech { background: var(--tkns-tech-dim); color: var(--tkns-tech); border: 1px solid rgba(167,139,250,0.3); }
 .cb-ice { background: var(--ice-dim); color: var(--ice); border: 1px solid rgba(105,240,174,0.3); }
 .cb-starke { background: var(--starke-dim); color: var(--starke); border: 1px solid rgba(255,107,53,0.3); }
 .cb-unknown { background: rgba(255,255,255,0.05); color: var(--text-muted); border: 1px solid var(--border); }
@@ -442,6 +445,11 @@ body {
       TKNS Telefonie
       <span class="cf-count" id="count-tkns">0</span>
     </div>
+    <div class="cf-pill" onclick="filterCompany('tkns_tech')" id="cf-tkns_tech">
+      <span class="cf-dot" style="background:var(--tkns-tech)"></span>
+      TKNS Technik
+      <span class="cf-count" id="count-tkns_tech">0</span>
+    </div>
     <div class="cf-pill" onclick="filterCompany('ice')" id="cf-ice">
       <span class="cf-dot" style="background:var(--ice)"></span>
       Mr. Ice
@@ -592,7 +600,7 @@ let allTickets = [], activeFilter = 'all';
 const COMPANIES = {
   tkns: {
     name: 'TKNS Telefonie',
-    emails: ['anfrage@tkns.de', 'technik@tkns.de'],
+    emails: ['anfrage@tkns.de'],
     badgeClass: 'cb-tkns',
     color: 'var(--tkns)',
     systemPrompt: `Du bist ein professioneller Support-Mitarbeiter für TKNS – Telekommunikations-Netzwerk-Service, betrieben von ETP Service UG in Berlin.
@@ -618,6 +626,16 @@ ETP-Service-Team
 Phone: +49.30.5050 8080
 Web: www.tkns.de
 Mail: Benutzen Sie bitte die Antwortfunktion`
+  },
+  tkns_tech: {
+    name: 'TKNS Technik',
+    emails: ['technik@tkns.de'],
+    badgeClass: 'cb-tkns-tech',
+    color: 'var(--tkns-tech)',
+    systemPrompt: `Du bist ein professioneller Techniker-Support-Mitarbeiter für TKNS – Telekommunikations-Netzwerk-Service, ETP Service UG Berlin. Du bearbeitest technische Anfragen und Servicefälle für das Technik Team 1. Gleiche Produkte und Informationen wie TKNS Telefonie, aber fokussiert auf technischen Support, Konfiguration, Fehlersuche und Reparaturen. Ton: Technisch präzise, professionell, auf Deutsch. Signatur: Mit freundlichen Grüßen
+ETP-Service-Team Technik
+Phone: +49.30.5050 8080
+Web: www.tkns.de`
   },
   ice: {
     name: 'Mr. Ice',
@@ -853,7 +871,7 @@ function renderTickets(tickets) {
   window._tickets = allTickets;
 
   // Update counts
-  const counts = { tkns: 0, ice: 0, starke: 0 };
+  const counts = { tkns: 0, tkns_tech: 0, ice: 0, starke: 0 };
   allTickets.forEach(t => { if (counts[t._company] !== undefined) counts[t._company]++; });
   Object.entries(counts).forEach(([k,v]) => {
     const el = document.getElementById('count-'+k);
@@ -873,7 +891,7 @@ function renderTicketList() {
     const co = COMPANIES[t._company];
     const agentName = (agents.find(a => a.id === t.responder_id)?.contact.name || 'Offen').split(' ')[0];
     const badgeClass = co ? co.name.split(' ')[0] === 'TKNS' ? 'cb-tkns' : co.name.split(' ')[0] === 'Mr.' ? 'cb-ice' : 'cb-starke' : 'cb-unknown';
-    const companyBadgeClass = t._company === 'tkns' ? 'cb-tkns' : t._company === 'ice' ? 'cb-ice' : t._company === 'starke' ? 'cb-starke' : 'cb-unknown';
+    const companyBadgeClass = t._company === 'tkns' ? 'cb-tkns' : t._company === 'tkns_tech' ? 'cb-tkns-tech' : t._company === 'ice' ? 'cb-ice' : t._company === 'starke' ? 'cb-starke' : 'cb-unknown';
     const companyName = co ? co.name : '?';
     return `<div class="ticket-card p${t.priority}" id="tc-${t.id}" onclick="selectTicket(${t.id})">
       <div class="tc-top">
@@ -911,7 +929,7 @@ async function selectTicket(id) {
   document.getElementById('detail-view').classList.add('show');
 
   const co = COMPANIES[t._company];
-  const companyBadgeClass = t._company === 'tkns' ? 'cb-tkns' : t._company === 'ice' ? 'cb-ice' : t._company === 'starke' ? 'cb-starke' : 'cb-unknown';
+  const companyBadgeClass = t._company === 'tkns' ? 'cb-tkns' : t._company === 'tkns_tech' ? 'cb-tkns-tech' : t._company === 'ice' ? 'cb-ice' : t._company === 'starke' ? 'cb-starke' : 'cb-unknown';
 
   document.getElementById('d-id').textContent = '#' + t.id;
   document.getElementById('d-subject').textContent = t.subject;
