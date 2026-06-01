@@ -1339,7 +1339,19 @@ async function loadConv(id) {
     const t = currentTicket;
     let msgs = [];
     if (t.description_text) msgs.push({ from: t.requester?.name||'Kunde', body: t.description_text, date: t.created_at, note: false });
-    convs.forEach(m => msgs.push({ from: m.from_email||'Agent', body: m.body_text||m.body||'', date: m.created_at, note: m.private||false }));
+    // Recopilar adjuntos de todas las conversaciones
+    const convAttachments = [];
+    convs.forEach(m => {
+      msgs.push({ from: m.from_email||'Agent', body: m.body_text||m.body||'', date: m.created_at, note: m.private||false });
+      if (m.attachments && m.attachments.length) convAttachments.push(...m.attachments);
+    });
+    currentTicket._convAttachments = convAttachments;
+
+    // Mostrar indicador de adjuntos si hay
+    const totalAtt = (currentTicket.attachments||[]).length + convAttachments.length;
+    if (totalAtt > 0) {
+      msgs.push({ from: '📎 System', body: `${totalAtt} Anhang/Anhänge gefunden – werden beim Generieren automatisch analysiert.`, date: null, note: true });
+    }
     if (!msgs.length) { c.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:12px">Keine Nachrichten</div>'; return; }
     c.innerHTML = msgs.map(m => `
       <div class="msg${m.note?' note':''}">
@@ -1355,6 +1367,64 @@ async function loadConv(id) {
 }
 
 // ─── AI RESPONSE ─────────────────────────────────────────────
+
+// Descarga un adjunto via Worker y lo devuelve como {base64, contentType}
+async function fetchAttachment(attachUrl) {
+  try {
+    const r = await fetch(
+      `${WORKER}/attachment?url=${encodeURIComponent(attachUrl)}`
+    );
+    if (!r.ok) return null;
+    return await r.json(); // { base64, contentType }
+  } catch(e) {
+    console.warn('Adjunto no descargable:', attachUrl, e);
+    return null;
+  }
+}
+
+// Construye el array de content para Claude incluyendo adjuntos
+async function buildMessageContent(userPromptText, attachments) {
+  const content = [];
+
+  // Texto principal siempre primero
+  content.push({ type: 'text', text: userPromptText });
+
+  if (!attachments || !attachments.length) return content;
+
+  toast(`📎 Lade ${attachments.length} Anhang/Anhänge...`, 'info');
+
+  for (const att of attachments) {
+    const ext = (att.name || '').split('.').pop().toLowerCase();
+    const isPdf = ext === 'pdf' || (att.content_type || '').includes('pdf');
+    const isImage = ['jpg','jpeg','png','gif','webp'].includes(ext)
+                    || (att.content_type || '').startsWith('image/');
+
+    if (!isPdf && !isImage) continue; // otros tipos: ignorar
+
+    const result = await fetchAttachment(att.attachment_url);
+    if (!result) continue;
+
+    const { base64, contentType } = result;
+
+    if (isPdf) {
+      content.push({
+        type: 'document',
+        source: { type: 'base64', media_type: 'application/pdf', data: base64 }
+      });
+      content.push({ type: 'text', text: `[Anhang: ${att.name || 'dokument.pdf'}]` });
+    } else if (isImage) {
+      const mime = contentType.startsWith('image/') ? contentType : `image/${ext}`;
+      content.push({
+        type: 'image',
+        source: { type: 'base64', media_type: mime, data: base64 }
+      });
+      content.push({ type: 'text', text: `[Foto: ${att.name || 'bild'}]` });
+    }
+  }
+
+  return content;
+}
+
 async function generateAIResponse() {
   if (!currentTicket) return;
   const co = COMPANIES[currentTicket._company];
@@ -1368,7 +1438,7 @@ async function generateAIResponse() {
   document.getElementById('ai-gen-btn').disabled = true;
 
   const convMsgs = document.getElementById('conv-list').innerText || currentTicket.description_text || '';
-  const userPrompt = `Ticket #${currentTicket.id}: ${currentTicket.subject}
+  const userPromptText = `Ticket #${currentTicket.id}: ${currentTicket.subject}
 Kunde: ${currentTicket.requester?.name || '—'} (${currentTicket.requester?.email || '—'})
 Erstellt: ${fmtDate(currentTicket.created_at)}
 
@@ -1378,21 +1448,30 @@ ${convMsgs.substring(0, 2000)}
 Bitte schreibe eine passende, hilfreiche Antwort auf die letzte Nachricht des Kunden.`;
 
   try {
+    // Adjuntos: del ticket principal + conversaciones
+    const allAttachments = [
+      ...(currentTicket.attachments || []),
+      ...(currentTicket._convAttachments || [])
+    ];
+
+    const messageContent = await buildMessageContent(userPromptText, allAttachments);
+
     const response = await fetch('https://tkns-claude-proxy.ronald-schneidert.workers.dev', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
+        max_tokens: 1500,
         system: co.systemPrompt,
-        messages: [{ role: 'user', content: userPrompt }]
+        messages: [{ role: 'user', content: messageContent }]
       })
     });
     const data = await response.json();
     const text = data.content?.map(c => c.text||'').join('') || 'Fehler beim Generieren.';
     document.getElementById('ai-response-text').value = text;
     document.getElementById('ai-response-text').style.display = 'block';
-    toast('✨ KI-Antwort generiert','success');
+    const attCount = allAttachments.length;
+    toast(`✨ KI-Antwort generiert${attCount ? ` (${attCount} Anhang/Anhänge analysiert)` : ''}`, 'success');
   } catch(e) {
     document.getElementById('ai-response-text').value = 'Fehler: ' + e.message;
     document.getElementById('ai-response-text').style.display = 'block';
