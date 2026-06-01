@@ -543,6 +543,14 @@ body {
               </div>
               <button class="btn btn-purple" onclick="generateAIResponse()" id="ai-gen-btn">✨ Antwort generieren</button>
             </div>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <label style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text-dim)">
+                📎 Datei hochladen
+                <input type="file" id="ai-file-input" accept="image/*,.pdf" style="display:none" onchange="handleFileUpload(event)">
+              </label>
+              <span id="ai-file-name" style="font-size:12px;color:var(--green);font-family:'DM Mono',monospace;display:none"></span>
+              <button id="ai-file-clear" onclick="clearFile()" style="display:none;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:18px;line-height:1">×</button>
+            </div>
             <div class="ai-response-area">
               <div class="ai-placeholder" id="ai-placeholder">
                 <div class="ai-icon">🤖</div>
@@ -1396,6 +1404,32 @@ async function loadConv(id) {
 
 // ─── AI RESPONSE ─────────────────────────────────────────────
 
+// ── FILE UPLOAD HANDLING ─────────────────────────────────
+let uploadedFile = null; // { base64, contentType, name }
+
+function handleFileUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    const base64 = dataUrl.split(',')[1];
+    uploadedFile = { base64, contentType: file.type, name: file.name };
+    document.getElementById('ai-file-name').textContent = '📄 ' + file.name;
+    document.getElementById('ai-file-name').style.display = 'inline';
+    document.getElementById('ai-file-clear').style.display = 'inline';
+    toast('✅ Datei geladen: ' + file.name, 'success');
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearFile() {
+  uploadedFile = null;
+  document.getElementById('ai-file-input').value = '';
+  document.getElementById('ai-file-name').style.display = 'none';
+  document.getElementById('ai-file-clear').style.display = 'none';
+}
+
 // Descarga un adjunto via Worker y lo devuelve como {base64, contentType}
 async function fetchAttachment(attachUrl) {
   try {
@@ -1416,6 +1450,21 @@ async function buildMessageContent(userPromptText, attachments) {
 
   // Texto principal siempre primero
   content.push({ type: 'text', text: userPromptText });
+
+  // Archivo subido manualmente (tiene prioridad)
+  if (uploadedFile) {
+    const { base64, contentType, name } = uploadedFile;
+    const isPdf = contentType.includes('pdf');
+    const isImage = contentType.startsWith('image/');
+    if (isPdf) {
+      content.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } });
+      content.push({ type: 'text', text: `[Hochgeladene Datei: ${name}] Bitte analysiere dieses Dokument und erstelle eine vollständige Kostenaufstellung.` });
+    } else if (isImage) {
+      content.push({ type: 'image', source: { type: 'base64', media_type: contentType, data: base64 } });
+      content.push({ type: 'text', text: `[Hochgeladenes Foto: ${name}] Bitte identifiziere alle sichtbaren Gegenstände und erstelle eine Kostenaufstellung.` });
+    }
+    return content; // Si hay archivo manual, no necesitamos más
+  }
 
   if (!attachments || !attachments.length) return content;
 
