@@ -597,7 +597,7 @@ const DOMAIN = 'tkns.freshdesk.com';
 let apiKey = '', agents = [], currentTicket = null, isDemoMode = false;
 let allTickets = [], activeFilter = 'all';
 
-// ─── COMPANY DETECTION ───────────────────────────────────────
+// ─── COMPANIES ───────────────────────────────────────────────
 const COMPANIES = {
   tkns: {
     name: 'TKNS Telefonie',
@@ -616,7 +616,7 @@ PRODUKTE & LEISTUNGEN:
 - Telefone: OpenScape, Mitel 6900-Serie (SIP), 5300-Serie, Jabra Headsets
 - Cloud-Telefonie: Centraflex, STARFACE
 - Services: Installation & Programmierung, Techniker-Service, VoIP-Umrüstung, Migration HiPath V9, Display-Reparatur Optipoint 500, Ankauf gebrauchter Anlagen
-- WICHTIG: OpenScape Business V2 Support-Ende 2026 – Kunden aktiv darauf hinweisen
+- WICHTIG: OpenScape Business V2 Support-Ende 31.12.2026 – Kunden aktiv darauf hinweisen
 - 3 Jahre Garantie, Express-Lieferung möglich, neuwertige gebrauchte Produkte verfügbar
 
 TON: Professionell, technisch kompetent, präzise, höflich. Immer auf Deutsch. Bei Preisanfragen Angebot anbieten. Bei techn. Problemen: Systemtyp, Softwareversion und Fehlerbeschreibung erfragen.
@@ -628,16 +628,171 @@ Phone: +49.30.5050 8080
 Web: www.tkns.de
 Mail: Benutzen Sie bitte die Antwortfunktion`
   },
+
   tkns_tech: {
     name: 'TKNS Technik',
     emails: ['technik@tkns.de'],
     badgeClass: 'cb-tkns-tech',
     color: 'var(--tkns-tech)',
-    systemPrompt: `Du bist ein professioneller Techniker-Support-Mitarbeiter für TKNS – Telekommunikations-Netzwerk-Service, ETP Service UG Berlin. Du bearbeitest technische Anfragen und Servicefälle für das Technik Team 1. Gleiche Produkte und Informationen wie TKNS Telefonie, aber fokussiert auf technischen Support, Konfiguration, Fehlersuche und Reparaturen. Ton: Technisch präzise, professionell, auf Deutsch. Signatur: Mit freundlichen Grüßen
+    systemPrompt: `Du bist ein erfahrener Techniker-Support-Mitarbeiter für TKNS – Telekommunikations-Netzwerk-Service, ETP Service UG, Berlin. Du bearbeitest technische Anfragen, Störungsfälle, Konfigurationen, Fehlerdiagnosen und einfache Angebote. Fernwartung per TeamViewer/VPN und Vor-Ort-Service möglich.
+
+KONTAKT & ZEITEN:
+Website: www.tkns.de | Tel: +49 30 5050 8080 | Mail: technik@tkns.de
+Servicezeiten: Mo–Fr 10:00–19:00 Uhr
+
+════════════════════════════════════════
+■ UNIFY / MITEL – OPENSCAPE BUSINESS (OSBiz)
+════════════════════════════════════════
+VARIANTEN: S (Software/VM), M (Appliance), X3/X5/X8 (Rack), L (Large Enterprise)
+ADMIN-TOOL: OpenScape Business Assistant (OSBA) → Browser Port 8085 | https://[IP]:8085
+MANAGER-E: Für erweiterte Konfiguration (Achtung: Lizenzen, SIP-Provider, UC-Suite nur im WebGUI sichtbar)
+
+SW-VERSIONEN & KRITISCHES:
+- V2 Mainboard: End-of-Support 31.12.2026 (offiziell bestätigt)
+  → Ab 2027: Kein RSP-Fernzugriff, keine SW-Updates, keine Security-Patches
+  → Migration auf V3: SW-Version V2R7 zwingend erforderlich (V2R6 muss erst auf R7)
+  → Migrationslizenz: CUB739 (HW-Wechsel auf V3-Mainboard) oder CUB740 (SW-Upgrade, kein HW-Wechsel)
+  → Lizenz an MAC-Adresse (Locking-ID) gebunden – VOR Migration prüfen!
+  → IMMER bei V2-Kunden aktiv auf Migration hinweisen!
+- V3: Aktuelle Produktionslinie. SLES 15 SP6 (nach SLES 12 Abkündigung)
+- SIP-Port intern: 5060 | extern (ITSP): 5070 → NIEMALS gleicher Port (Sicherheitsrisiko)
+- Nach Portänderung oder T.38-Fax-Änderung: System-Neustart PFLICHT
+
+HÄUFIGE FEHLERBILDER OSBiz:
+
+1. EINWEGTON / KEIN AUDIO
+   Ursache: NAT-Problem, SIP-ALG aktiv, falsche RTP-Ports
+   Lösung: SIP-ALG im Router DEAKTIVIEREN (häufigste Ursache!)
+   → Fester RTP-Portbereich empfehlen (z.B. 10000–10025) + Firewall-Freigabe
+
+2. GESPRÄCHSABBRUCH NACH 30 / 60 / 180 SEKUNDEN
+   Ursache A: SIP-ALG modifiziert SIP-Header → deaktivieren
+   Ursache B: UDP-Session-Timer läuft ab (Router schließt NAT-Eintrag)
+   Lösung: Re-Registration Timer auf 30 Sek. setzen
+   Pfad: ITSP-Template → Erweiterte SIP-Provider-Einstellungen
+
+3. SIP-REGISTRIERUNGSFEHLER
+   401 Unauthorized → Falsches Passwort / Auth-User
+   403 Forbidden → Rufnummer nicht im Trunk freigeschaltet
+   407 Proxy Auth Required → Proxy-Authentifizierung fehlt
+   481 Call Leg Does Not Exist → Konfliktierende SIP-Endgeräte
+   → SIP-Trace ziehen: Expertenmodus → Diagnose → Trace → Leitungsprotokoll
+
+4. RUFNUMMER / "KOLLISION MIT RICHTUNG"
+   Ursache: Richtungskennzahl (z.B. "0") kollidiert mit interner Nummer
+   Pfad: Expertenmodus → Leitungen/Vernetzungen → Richtung
+   → LCR nach Änderung prüfen
+
+5. LIZENZ-PROBLEME NACH NEUSTART
+   → Lizenz-Status prüfen: OSBA → Lizenzen (nur WebGUI!)
+   → CLS-Verbindung und Locking-ID (MAC) prüfen
+
+6. VOICEMAIL / UC-SUITE FEHLER
+   → Logs: OSBA → Diagnose → Systemprotokoll
+   → TCPDump systemseitig + Wireshark client-seitig
+
+DIAGNOSETOOL-PFADE (OSBiz):
+- SIP-Trace: Expertenmodus → Diagnose → Trace → Leitungsprotokoll
+- System-Log: Expertenmodus → Diagnose → Systemprotokoll
+- Lizenzen: OSBA → Lizenzen (NUR WebGUI)
+- ITSP-Status: Expertenmodus → Leitungen → VoIP → ITSP
+
+════════════════════════════════════════
+■ SIEMENS – HiPATH 3000-SERIE (3300/3500/3550/3700/3750/3800)
+════════════════════════════════════════
+ADMIN-TOOL: HiPath 3000/5000 Manager E (Windows, LAN oder seriell)
+ZUGANG seriell: Nullmodemkabel + COM-Port (USB-Seriell-Adapter funktioniert NICHT zuverlässig)
+
+WICHTIG: HiPath 3000 V9 = letzte SW-Version. Kein weiteres Update möglich.
+→ Ersatzteile nur aus Lagerbestand – begrenzt verfügbar!
+→ Bei Totalausfall: Systemtausch auf OSBiz empfehlen
+
+UPGRADE-LIZENZEN vorhanden für:
+- HiPath 3000 V7/V8/V9 → OSBiz X3/X5/X8
+- HiPath 500 V9 → OSBiz X1
+
+HÄUFIGE FEHLERBILDER HiPath 3000:
+
+1. NETZTEIL-AUSFALL (sehr häufig bei älteren Systemen!)
+   → Symptom: System startet nicht, keine LED-Aktivität
+   → Power Box PB3000 tauschen – Lagerbestand prüfen
+
+2. BAUGRUPPEN-FEHLER
+   Häufig betroffene Baugruppen:
+   - SLMAE8 / SLMAV8 / SLMAV24: Analoge Teilnehmerbaugruppe
+   - SLMO2 / SLMO8: Digitale Teilnehmerbaugruppe (UP0/E)
+   - STMD3: Digitale S0-Baugruppe (8 S0)
+   - DIUT2: ISDN S2M-Baugruppe
+   - HG 1500: IP-Gateway (LAN-Schnittstelle)
+   → LED-Status an Frontblende prüfen
+
+3. DATUM/UHRZEIT-RESET NACH NEUSTART
+   → CMOS-Batterie leer → tauschen oder SNTP-Server konfigurieren
+   → Bei AllIP-Migration: SNTP zwingend erforderlich
+
+4. LIZENZVERLUST NACH NEUSTART
+   → Lizenz-Backup prüfen, Seriennummer + Lizenzdatei vom Kunden anfordern
+
+5. KDS-ABRUF SCHLÄGT FEHL (Manager E)
+   → LAN-Zugang prüfen: LIM (auf Mainboard) vs. HIP/HG (separate Baugruppe)
+   → Firewall der Anlage prüfen (nur über Manager oder seriell zugänglich)
+
+════════════════════════════════════════
+■ SIEMENS – HiPATH 4000 / HiCOM 100/150/300
+════════════════════════════════════════
+HiPath 4000: Enterprise-System. Bei Störung: Board-Typ, IPDA-Konfiguration, Systemlog anfordern.
+HiCom 100/150/300: Sehr alte Systeme, Ersatzteilversorgung extrem eingeschränkt.
+→ Bei Defekt meist Systemtausch empfehlen.
+
+════════════════════════════════════════
+■ TELEKOM – OCTOPUS / ISDN → VoIP
+════════════════════════════════════════
+- ISDN-Abschaltung läuft bundesweit → Kunden AKTIV auf SIP/VoIP hinweisen
+- Rufnummernportierung: Kundennummer + Rufnummernblock + Zieldatum erfragen
+- Mindestens 6 Wochen Vorlauf einplanen
+- Empfohlene SIP-Carrier: Deutsche Telekom (CompanyFlex, Deutschland LAN), Easybell, sipgate
+
+════════════════════════════════════════
+■ SIP / VoIP CHECKLISTE BEI PROBLEMEN
+════════════════════════════════════════
+□ SIP-ALG im Router deaktiviert?
+□ NAT-Einstellungen korrekt? (STUN-Server konfiguriert?)
+□ RTP-Portbereich freigegeben in Firewall?
+□ SIP-Port intern 5060, extern 5070?
+□ SNTP-Server konfiguriert? (bei AllIP-Migration Pflicht)
+□ Seizure Code / Richtungskennzahl korrekt?
+□ Leitungsgruppe (Trk.Grp.) korrekt zugewiesen?
+
+════════════════════════════════════════
+■ DIAGNOSE-WORKFLOW (IMMER EINHALTEN)
+════════════════════════════════════════
+1. Systemtyp + Modell erfragen (z.B. "OpenScape Business X5 V3R3")
+2. SW-Version erfragen
+3. Fehlerbild genau beschreiben: Wann? Wie oft? Alle Leitungen oder nur eine?
+4. Bereits durchgeführte Maßnahmen erfragen
+5. Fernzugriff anbieten (TeamViewer, OSBA-Zugang per Browser, VPN)
+6. Bei Bedarf: SIP-Trace / Systemlog anfordern
+7. Hardware-Defekt → Ersatzteil-Angebot oder Techniker-Vor-Ort vorschlagen
+
+════════════════════════════════════════
+■ ANGEBOTE (EINFACHE FÄLLE)
+════════════════════════════════════════
+- Fernwartung / Konfiguration: Stundensatz auf Anfrage, Angebot per E-Mail
+- Vor-Ort-Service: Berlin-Pauschale + Stundensatz | Bundesweit auf Anfrage
+- Ersatzteile: Preis aus Lagerbestand, Angebot per E-Mail
+- Lizenzen: IMMER Systemtyp + Seriennummer/MAC anfordern VOR Preisnennung
+- Größere Projekte (Migration, Neuanlage): Weiterleitung an anfrage@tkns.de
+
+TON: Technisch präzise, professionell, lösungsorientiert. Auf Deutsch. Kurze, klare Sätze. Bei unklarem Fehlerbild: eine gezielte Frage stellen, nicht mehrere auf einmal.
+
+SIGNATUR (immer exakt so):
+Mit freundlichen Grüßen
 ETP-Service-Team Technik
 Phone: +49.30.5050 8080
-Web: www.tkns.de`
+Web: www.tkns.de
+Mail: Bitte die Antwortfunktion verwenden`
   },
+
   ice: {
     name: 'Mr. Ice',
     emails: ['anfrage@mrice.de'],
@@ -734,6 +889,7 @@ Phon: +49.30.530.00.540
 Web: www.mrice.de
 Mail: Bitte die Antwortfunktion verwenden`
   },
+
   starke: {
     name: 'Starke Power',
     emails: ['info@starke-power.de'],
@@ -762,24 +918,39 @@ Tel: 030 5050 80850 | starke-power.de`
   }
 };
 
+// ─── COMPANY DETECTION (FIXED) ───────────────────────────────
 function detectCompany(ticket) {
   const toEmail = (ticket.to_emails || []).join(' ').toLowerCase();
   const supportEmail = (ticket.support_email || '').toLowerCase();
   const allEmails = toEmail + ' ' + supportEmail;
   const desc = (ticket.description_text || ticket.subject || '').toLowerCase();
-  
-  for (const [key, co] of Object.entries(COMPANIES)) {
-    if (co.emails.some(e => allEmails.includes(e.toLowerCase()))) return key;
+
+  // 1. Match exacto por email (orden importa: más específico primero)
+  const emailMap = [
+    { key: 'tkns_tech', emails: ['technik@tkns.de'] },
+    { key: 'tkns',      emails: ['anfrage@tkns.de'] },
+    { key: 'ice',       emails: ['anfrage@mrice.de', 'info@mrice.de'] },
+    { key: 'starke',    emails: ['info@starke-power.de'] },
+  ];
+  for (const { key, emails } of emailMap) {
+    if (emails.some(e => allEmails.includes(e))) return key;
   }
-  // Fallback by support_email domain
-  if (supportEmail.includes('tkns') && supportEmail.includes('technik')) return 'tkns_tech';
-  if (supportEmail.includes('tkns')) return 'tkns';
-  if (supportEmail.includes('mrice') || supportEmail.includes('mricedean')) return 'ice';
-  if (supportEmail.includes('starke')) return 'starke';
-  // Fallback by keywords
-  if (desc.includes('openscape') || desc.includes('hipath') || desc.includes('netzteil')) return 'tkns';
-  if (desc.includes('eis') || desc.includes('ice') || desc.includes('lieferung')) return 'ice';
-  if (desc.includes('entrümpel') || desc.includes('wohnungsauflös') || desc.includes('räumung')) return 'starke';
+
+  // 2. Fallback por support_email domain (más específico primero)
+  if (supportEmail.includes('technik')) return 'tkns_tech';
+  if (supportEmail.includes('tkns'))    return 'tkns';
+  if (supportEmail.includes('mrice'))   return 'ice';
+  if (supportEmail.includes('starke'))  return 'starke';
+
+  // 3. Fallback por keywords en asunto/descripción
+  if (desc.includes('openscape') || desc.includes('hipath') ||
+      desc.includes('netzteil')  || desc.includes('telefonanlage') ||
+      desc.includes('sip trunk') || desc.includes('baugruppe'))   return 'tkns';
+  if (desc.includes('eis') || desc.includes('crushed') ||
+      desc.includes('eiswürfel') || desc.includes('trockeneis'))  return 'ice';
+  if (desc.includes('entrümpel') || desc.includes('wohnungsauflös') ||
+      desc.includes('räumung')   || desc.includes('sperrmüll'))   return 'starke';
+
   return 'unknown';
 }
 
@@ -874,10 +1045,11 @@ function setConnected(ok, demo=false) {
 
 async function refreshTickets() {
   if (isDemoMode) { renderTickets(DEMO_TICKETS); toast('Aktualisiert','info'); return; }
-  try { const p1 = await fdFetch('/tickets?per_page=50&order_by=created_at&order_type=desc&filter=new_and_my_open&include=requester&page=1');
+  try {
+    const p1 = await fdFetch('/tickets?per_page=50&order_by=created_at&order_type=desc&filter=new_and_my_open&include=requester&page=1');
     const p2 = await fdFetch('/tickets?per_page=50&order_by=created_at&order_type=desc&filter=new_and_my_open&include=requester&page=2');
-    const d = [...p1, ...(Array.isArray(p2) ? p2 : [])]; renderTickets(d); toast('Tickets aktualisiert','success'); }
-  catch(e) { toast('Fehler','error'); }
+    const d = [...p1, ...(Array.isArray(p2) ? p2 : [])]; renderTickets(d); toast('Tickets aktualisiert','success');
+  } catch(e) { toast('Fehler','error'); }
 }
 
 // ─── FILTER ──────────────────────────────────────────────────
@@ -897,15 +1069,12 @@ function filterCompany(key) {
 function renderTickets(tickets) {
   allTickets = tickets.map(t => ({ ...t, _company: detectCompany(t) }));
   window._tickets = allTickets;
-
-  // Update counts
   const counts = { tkns: 0, tkns_tech: 0, ice: 0, starke: 0 };
   allTickets.forEach(t => { if (counts[t._company] !== undefined) counts[t._company]++; });
   Object.entries(counts).forEach(([k,v]) => {
     const el = document.getElementById('count-'+k);
     if (el) el.textContent = v;
   });
-
   renderTicketList();
 }
 
@@ -914,11 +1083,9 @@ function renderTicketList() {
   document.getElementById('ticket-count').textContent = filtered.length + ' Tickets';
   const list = document.getElementById('ticket-list');
   if (!filtered.length) { list.innerHTML = '<div class="loading-row">Keine Tickets gefunden</div>'; return; }
-
   list.innerHTML = filtered.map(t => {
     const co = COMPANIES[t._company];
     const agentName = (agents.find(a => a.id === t.responder_id)?.contact.name || 'Offen').split(' ')[0];
-    const badgeClass = co ? co.name.split(' ')[0] === 'TKNS' ? 'cb-tkns' : co.name.split(' ')[0] === 'Mr.' ? 'cb-ice' : 'cb-starke' : 'cb-unknown';
     const companyBadgeClass = t._company === 'tkns' ? 'cb-tkns' : t._company === 'tkns_tech' ? 'cb-tkns-tech' : t._company === 'ice' ? 'cb-ice' : t._company === 'starke' ? 'cb-starke' : 'cb-unknown';
     const companyName = co ? co.name : '?';
     return `<div class="ticket-card p${t.priority}" id="tc-${t.id}" onclick="selectTicket(${t.id})">
@@ -972,12 +1139,10 @@ async function selectTicket(id) {
   cb.textContent = co ? co.name : 'Unbekannt';
   cb.className = 'company-badge ' + companyBadgeClass;
 
-  // AI info
   if (co) {
     document.getElementById('ai-company-info').innerHTML = `<strong>${co.name}</strong>${co.emails.join(' / ')} — KI-Profil aktiv für diese Firma.`;
   }
 
-  // Reset AI panel
   document.getElementById('ai-placeholder').style.display = 'flex';
   document.getElementById('ai-response-text').style.display = 'none';
   document.getElementById('ai-actions').style.display = 'none';
@@ -999,7 +1164,6 @@ function switchTab(name) {
     t.classList.toggle('active', names[i] === name);
   });
   document.querySelectorAll('.tab-content').forEach((c,i) => {
-    const names = ['tab-conv','tab-ai','tab-actions'];
     c.classList.toggle('active', c.id === 'tab-'+name);
   });
 }
@@ -1041,7 +1205,6 @@ async function generateAIResponse() {
   document.getElementById('ai-generating').style.display = 'flex';
   document.getElementById('ai-gen-btn').disabled = true;
 
-  // Build conversation context
   const convMsgs = document.getElementById('conv-list').innerText || currentTicket.description_text || '';
   const userPrompt = `Ticket #${currentTicket.id}: ${currentTicket.subject}
 Kunde: ${currentTicket.requester?.name || '—'} (${currentTicket.requester?.email || '—'})
