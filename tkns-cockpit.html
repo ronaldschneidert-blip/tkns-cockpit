@@ -802,7 +802,7 @@ async function connectFreshdesk() {
   const btn = document.getElementById('connect-btn');
   btn.disabled = true; btn.textContent = 'Verbinde...';
   try {
-    const data = await fdFetch('/tickets?per_page=50&order_by=created_at&order_type=desc&filter=open&include=requester');
+    const data = await fdFetch('/tickets?per_page=50&order_by=created_at&order_type=desc&filter=new_and_my_open&include=requester');
     agents = await fdFetch('/agents');
     document.getElementById('setup-panel').style.display = 'none';
     setConnected(true); renderTickets(data); populateAgents();
@@ -826,7 +826,7 @@ function setConnected(ok, demo=false) {
 
 async function refreshTickets() {
   if (isDemoMode) { renderTickets(DEMO_TICKETS); toast('Aktualisiert','info'); return; }
-  try { const d = await fdFetch('/tickets?per_page=50&order_by=created_at&order_type=desc&filter=open&include=requester'); renderTickets(d); toast('Tickets aktualisiert','success'); }
+  try { const d = await fdFetch('/tickets?per_page=50&order_by=created_at&order_type=desc&filter=new_and_my_open&include=requester'); renderTickets(d); toast('Tickets aktualisiert','success'); }
   catch(e) { toast('Fehler','error'); }
 }
 
